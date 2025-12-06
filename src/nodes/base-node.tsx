@@ -1,4 +1,4 @@
-import RenderedImage from "@/components/rendered-image";
+import Canvas from "@/components/canvas";
 import { Handle, Node, Position } from "@xyflow/react";
 import { ReactNode } from "react";
 
@@ -65,7 +65,7 @@ function BaseNodeComponent({ name, inputs, outputs, children, shaderTemplate, un
         {children}
       </div>
       <div className="p-2.5">
-        <RenderedImage shaderTemplate={shaderTemplate} uniforms={uniforms} />
+        <Canvas shaderTemplate={shaderTemplate} uniforms={uniforms} />
       </div>
       <div className="flex flex-row pb-2.5">
         <div className="flex flex-col w-full gap-3">{input_components}</div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import glslUtils from "@/shaders/utils.glsl";
 
 const vsSrc = `#version 300 es
 precision highp float;
@@ -23,6 +24,8 @@ in vec2 uv;
 out vec4 outColor;
 
 $UNIFORMS
+
+${glslUtils}
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   $INSIDE
@@ -67,7 +70,7 @@ function createProgram(gl: WebGL2RenderingContext, vsSrc: string, fsSrc: string)
 
 const previewSize = 128;
 
-function RenderedImage({
+function Canvas({
   shaderTemplate,
   uniforms,
 }: {
@@ -77,20 +80,26 @@ function RenderedImage({
     value: unknown,
   }[],
 }) {
-  const imageRef = useRef<HTMLImageElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     (async () => {
-      if (shaderTemplate === undefined || uniforms === undefined) return;
-      // const canvas = canvasRef.current as HTMLCanvasElement;
-      const canvas = new OffscreenCanvas(previewSize, previewSize);
+      const canvas = canvasRef.current as HTMLCanvasElement;
       const gl = canvas.getContext('webgl2');
       if (gl === null) throw new Error("Couldn't get webgl context.");
 
-      // TODO: Use real uniforms and change to a canvas to conserve the context and re-render on 
-      // parameter change.
+      // Clear the canvas if a node gets disconected or something
+      if (shaderTemplate === undefined || uniforms === undefined) {
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        return;
+      }
+
+      // const canvas = new OffscreenCanvas(previewSize, previewSize);
+
+      // TODO: Use real uniforms
       const uniformsSrc = uniforms.map(({ name, value }) => {
-        return `const float ${name} = ${value.toFixed(1)};`; // TODO: remove hardcoded float type
+        return `const float ${name} = ${value.toFixed(10)};`; // TODO: remove hardcoded float type
       }).join("\n");
 
       const finalFsSrc = fsSrc
@@ -115,23 +124,23 @@ function RenderedImage({
 
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-      canvas.convertToBlob().then((blob) => {
-        console.log(blob);
-        const image = imageRef.current;
-        if (image === null) throw new Error("Error getting reference to img element.");
-        image.src = URL.createObjectURL(blob);
-      });
+      // canvas.convertToBlob().then((blob) => {
+      //   console.log(blob);
+      //   const image = canvasRef.current;
+      //   if (image === null) throw new Error("Error getting reference to img element.");
+      //   image.src = URL.createObjectURL(blob);
+      // });
     })();
   }, [shaderTemplate, uniforms]);
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <canvas
       className="w-full aspect-square"
-      ref={imageRef}
-      alt=""
+      ref={canvasRef}
+      width={previewSize}
+      height={previewSize}
     />
   );
 };
 
-export default RenderedImage;
+export default Canvas;

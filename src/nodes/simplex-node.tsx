@@ -3,7 +3,7 @@ import BaseNodeComponent, { BaseNode } from "./base-node";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
 const simplexNodeCodeTemplate = `
-vec3 col = 0.5 + 0.5 * cos( ($UV.xyx + vec3(0.0,2.0,4.0)) * 10.0 + $seed);
+vec3 col = vec3(simplex3d(vec3($UV, $seed) * $scale) * 0.5 + 0.5);
 $OUT = vec4(col, 1.0);
 `;
 
@@ -11,27 +11,27 @@ function SimplexNode({ id, data }: NodeProps<BaseNode>) {
   const { updateNodeData } = useReactFlow();
 
   const [seed, setSeed] = useState(0);
-  const [octaves, setOctaves] = useState(1);
+  const [scale, setScale] = useState(1);
 
   const onChangeSeed = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setSeed(Number.parseFloat(e.target.value));
   }, []);
   
-  const onChangeOctave = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setOctaves(Number.parseInt(e.target.value));
+  const onChangeScale = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setScale(Number.parseInt(e.target.value));
   }, []);
 
   useEffect(() => {
     updateNodeData(id, {
       shaderTemplate: simplexNodeCodeTemplate
         .replaceAll("$seed", `${id}_seed`)
-        .replaceAll("$octaves", `${id}_octaves`),
+        .replaceAll("$scale", `${id}_scale`),
       uniformsNamesAndValues: [
         { name: `${id}_seed`, value: seed },
-        { name: `${id}_octaves`, value: octaves },
+        { name: `${id}_scale`, value: scale },
       ],
     });
-  }, [seed, octaves, id, updateNodeData]);
+  }, [seed, scale, id, updateNodeData]);
   
   return (
     <BaseNodeComponent
@@ -47,18 +47,19 @@ function SimplexNode({ id, data }: NodeProps<BaseNode>) {
           className="w-full nodrag"
           id="seed"
           type="number"
+          step={0.01}
           onChange={onChangeSeed}
         />
       </div>
       <div>
-        <label className="block text-left" htmlFor="octaves">Octaves</label>
+        <label className="block text-left" htmlFor="scale">Scale</label>
         <input
           className="w-full nodrag"
-          id="octaves"
+          id="scale"
           type="number"
           min={1}
-          max={8}
-          onChange={onChangeOctave}
+          max={64}
+          onChange={onChangeScale}
         />
       </div>
       {data.shaderTemplate}
