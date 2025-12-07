@@ -40,16 +40,23 @@ const initialNodes: Node[] = [
     },
     type: "invertNode",
   },
+  {
+    id: "n3",
+    position: { x: 100, y: 100 },
+    data: {
+    },
+    type: "invertNode",
+  },
 ];
 
-const initialEdges = [
-  {
-    id: "n1-n2",
-    source: "n1",
-    target: "n2",
-    sourceHandle: "out",
-    targetHandle: "in",
-  },
+const initialEdges: Edge[] = [
+  // {
+  //   id: "n1-n2",
+  //   source: "n1",
+  //   target: "n2",
+  //   sourceHandle: "out",
+  //   targetHandle: "in",
+  // },
 ];
 
 export default function Home() {

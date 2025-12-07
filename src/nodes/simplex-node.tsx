@@ -1,6 +1,7 @@
 import { NodeProps, useReactFlow } from "@xyflow/react";
-import BaseNodeComponent, { BaseNode } from "./base-node";
+import { BaseNodeComponent, BaseNode } from "./base-node";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";
 
 const simplexNodeCodeTemplate = `
 vec3 col = vec3(simplex3d(vec3($UV, $seed) * $scale) * 0.5 + 0.5);
@@ -16,30 +17,37 @@ function SimplexNode({ id, data }: NodeProps<BaseNode>) {
   const onChangeSeed = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setSeed(Number.parseFloat(e.target.value));
   }, []);
-  
+
   const onChangeScale = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setScale(Number.parseInt(e.target.value));
   }, []);
 
   useEffect(() => {
     updateNodeData(id, {
-      shaderTemplate: simplexNodeCodeTemplate
-        .replaceAll("$seed", `${id}_seed`)
-        .replaceAll("$scale", `${id}_scale`),
-      uniformsNamesAndValues: [
-        { name: `${id}_seed`, value: seed },
-        { name: `${id}_scale`, value: scale },
+      shaderTemplate: prependUniformVariablesWithId(
+        id,
+        simplexNodeCodeTemplate,
+        ["seed", "scale"],
+      ),
+      uniformNames: [
+        { name: `${id}_seed`, type: "float" },
+        { name: `${id}_scale`, type: "float" },
+      ],
+      uniformValues: [
+        { value: seed },
+        { value: scale }
       ],
     });
   }, [seed, scale, id, updateNodeData]);
-  
+
   return (
     <BaseNodeComponent
       name="Simplex Noise"
       inputs={[]}
       outputs={[{ name: "out" }]}
       shaderTemplate={data.shaderTemplate}
-      uniforms={data.uniformsNamesAndValues}
+      uniformNames={data.uniformNames}
+      uniformValues={data.uniformValues}
     >
       <div>
         <label className="block text-left" htmlFor="seed">Seed</label>
@@ -47,8 +55,9 @@ function SimplexNode({ id, data }: NodeProps<BaseNode>) {
           className="w-full nodrag"
           id="seed"
           type="number"
-          step={0.01}
+          step={0.001}
           onChange={onChangeSeed}
+          value={seed}
         />
       </div>
       <div>
@@ -60,6 +69,7 @@ function SimplexNode({ id, data }: NodeProps<BaseNode>) {
           min={1}
           max={64}
           onChange={onChangeScale}
+          value={scale}
         />
       </div>
       {data.shaderTemplate}

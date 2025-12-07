@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import glslUtils from "@/shaders/utils.glsl";
 
 const vsSrc = `#version 300 es
@@ -68,70 +68,103 @@ function createProgram(gl: WebGL2RenderingContext, vsSrc: string, fsSrc: string)
   return program;
 }
 
-const previewSize = 128;
+const previewSize = 512;
 
 function Canvas({
   shaderTemplate,
-  uniforms,
+  uniformNames,
+  uniformValues,
 }: {
   shaderTemplate?: string,
-  uniforms?: {
+  uniformNames?: {
     name: string,
+    type: string,
+  }[],
+  uniformValues?: {
     value: unknown,
   }[],
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [program, setProgram] = useState<WebGLProgram | null>(null);
+  const [src, setSrc] = useState<string | null>(null);
+
+  // Reconstruct shader when connected nodes change
+  useEffect(() => {
+    console.log("RECONSTRUCT SHADER");
+    const canvas = canvasRef.current;
+    if (canvas === null) throw new Error("Couldn't get canvas reference.");
+    const gl = canvas.getContext('webgl2');
+    if (gl === null) throw new Error("Couldn't get webgl context.");
+
+    if (shaderTemplate === undefined || uniformNames === undefined) {
+      return;
+    }
+
+    const uniformsSrc = uniformNames.map(({ name, type }) => {
+      return `uniform ${type} ${name};`; // TODO: remove hardcoded float type
+    }).join("\n");
+
+    const finalFsSrc = fsSrc
+      .replace(
+        "$INSIDE",
+        shaderTemplate
+          .replaceAll("$UV", "fragCoord")
+          .replaceAll("$OUT", "fragColor"),
+      )
+      .replace(
+        "$UNIFORMS",
+        uniformsSrc,
+      );
+
+    setProgram(() => createProgram(gl, vsSrc, finalFsSrc));
+    setSrc(() => finalFsSrc);
+  }, [shaderTemplate, uniformNames]);
 
   useEffect(() => {
-    (async () => {
-      const canvas = canvasRef.current as HTMLCanvasElement;
-      const gl = canvas.getContext('webgl2');
-      if (gl === null) throw new Error("Couldn't get webgl context.");
+    console.log("RE-RENDER");
+    const canvas = canvasRef.current;
+    if (canvas === null) throw new Error("Couldn't get canvas reference.");
+    const gl = canvas.getContext('webgl2');
+    if (gl === null) throw new Error("Couldn't get webgl context.");
 
-      // Clear the canvas if a node gets disconected or something
-      if (shaderTemplate === undefined || uniforms === undefined) {
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        return;
+    // Clear the canvas if a node gets disconected or something
+    if (program === null || shaderTemplate === undefined || uniformNames === undefined || uniformValues === undefined) {
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      return;
+    }
+
+    gl.useProgram(program);
+
+    uniformNames.forEach(({ name, type }, i) => {
+      const location = gl.getUniformLocation(program, name);
+      if (location === null) {
+        console.log(shaderTemplate);
+        console.log(uniformNames);
+        console.log(uniformValues);
+        console.log(src);
+        console.error(gl.getError().toString(16));
+        throw new Error(`Couldn't get location of uniform: \`${name}.\``);
       }
 
-      // const canvas = new OffscreenCanvas(previewSize, previewSize);
+      const value = uniformValues[i].value;
+      switch (type) {
+        case "float":
+          if (typeof value !== 'number')
+            throw new Error(`Invalid value type (${typeof value}) for uniform type (${type})`);
+          gl.uniform1f(location, value);
+          break;
+        default:
+          throw new Error(`Unform type: \`${type}\` invalid or not implemented.`)
+      }
+    });
 
-      // TODO: Use real uniforms
-      const uniformsSrc = uniforms.map(({ name, value }) => {
-        return `const float ${name} = ${value.toFixed(10)};`; // TODO: remove hardcoded float type
-      }).join("\n");
+    // const vao = gl.createVertexArray();
+    // gl.bindVertexArray(vao);
 
-      const finalFsSrc = fsSrc
-        .replace(
-          "$INSIDE",
-          shaderTemplate
-            .replaceAll("$UV", "fragCoord")
-            .replaceAll("$OUT", "fragColor"),
-        )
-        .replace(
-          "$UNIFORMS",
-          uniformsSrc,
-        );
-
-      const program = createProgram(gl, vsSrc, finalFsSrc);
-      gl.useProgram(program);
-
-      const vao = gl.createVertexArray();
-      gl.bindVertexArray(vao);
-
-      gl.viewport(0, 0, previewSize, previewSize);
-
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-      // canvas.convertToBlob().then((blob) => {
-      //   console.log(blob);
-      //   const image = canvasRef.current;
-      //   if (image === null) throw new Error("Error getting reference to img element.");
-      //   image.src = URL.createObjectURL(blob);
-      // });
-    })();
-  }, [shaderTemplate, uniforms]);
+    gl.viewport(0, 0, previewSize, previewSize);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }, [shaderTemplate, uniformNames, uniformValues, program, src]);
 
   return (
     <canvas

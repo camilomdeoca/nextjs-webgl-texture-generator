@@ -1,10 +1,12 @@
 import { NodeProps, useNodeConnections, useNodesData, useReactFlow } from "@xyflow/react";
-import BaseNodeComponent, { BaseNode } from "./base-node";
+import { BaseNodeComponent, BaseNode } from "./base-node";
 import { useEffect } from "react";
+import { insertTemplateIntoInputCalls } from "@/glsl-parsing/glsl-templates";
 
 const invertNodeCodeTemplate = `
 vec4 input1;
-$INPUT1(input1, $UV)
+vec2 uv1 = $UV;
+$INPUT0(input1, uv1)
 vec3 col = vec3(1.0) - input1.xyz;
 $OUT = vec4(col, 1.0);
 `;
@@ -17,21 +19,17 @@ function InvertNode({ id, data }: NodeProps<BaseNode>) {
     handleId: "in",
   });
 
-  const inputData = useNodesData(connection?.[0]?.source);
+  const inputData = useNodesData<BaseNode>(connection?.[0]?.source);
 
   useEffect(() => {
-    const inputCodeTemplate = (inputData?.data.shaderTemplate as string | null)
-      ?.replaceAll("$UV", "$UV")
-      ?.replaceAll("$OUT", "input1");
-
-    const finalCodeTemplate = inputCodeTemplate !== undefined
-      ? invertNodeCodeTemplate
-        .replaceAll("$INPUT1(input1, $UV)", `{\n${inputCodeTemplate}\n}`)
+    const finalCodeTemplate = inputData?.data.shaderTemplate !== undefined
+      ? insertTemplateIntoInputCalls(id, invertNodeCodeTemplate, [inputData?.data.shaderTemplate])
       : undefined;
 
     updateNodeData(id, {
       shaderTemplate: finalCodeTemplate,
-      uniformsNamesAndValues: inputData?.data.uniformsNamesAndValues,
+      uniformNames: inputData?.data?.uniformNames,
+      uniformValues: inputData?.data?.uniformValues,
     });
   }, [inputData, id, updateNodeData]);
 
@@ -41,7 +39,8 @@ function InvertNode({ id, data }: NodeProps<BaseNode>) {
       inputs={[{ name: "in" }]}
       outputs={[{ name: "out" }]}
       shaderTemplate={data.shaderTemplate}
-      uniforms={data.uniformsNamesAndValues}
+      uniformNames={data.uniformNames}
+      uniformValues={data.uniformValues}
     >
       {data.shaderTemplate}
     </BaseNodeComponent>
