@@ -4,8 +4,17 @@ import { ReactNode } from "react";
 
 export type BaseNodeData = {
   shaderTemplate?: string,
-  uniformNames?: { name: string, type: string }[],
-  uniformValues?: {value: unknown}[],
+  parameters?: {
+    definitions: {
+      name: string,
+      id: string,
+      uniformName: string,
+      uniformType: string,
+      inputType: string,
+    }[],
+    values: unknown[],
+  },
+  ownValues: unknown[],
 };
 
 export type BaseNode = Node<BaseNodeData>;
@@ -16,9 +25,7 @@ export type BaseNodeComponentParameters = {
   inputs: { name: string }[],
   outputs: { name: string }[],
   children?: ReactNode,
-  shaderTemplate?: string,
-  uniformNames?: { name: string, type: string }[],
-  uniformValues?: {value: unknown}[],
+  data: BaseNodeData,
 };
 
 export function BaseNodeComponent({
@@ -26,9 +33,7 @@ export function BaseNodeComponent({
   inputs,
   outputs,
   children,
-  shaderTemplate,
-  uniformNames,
-  uniformValues,
+  data,
 }: BaseNodeComponentParameters) {
   const input_components = inputs.map((input, i) => (
     <div className="relative flex flex-row mr-auto" key={i}>
@@ -76,9 +81,8 @@ export function BaseNodeComponent({
       </div>
       <div className="p-2.5">
         <Canvas
-          shaderTemplate={shaderTemplate}
-          uniformNames={uniformNames}
-          uniformValues={uniformValues}
+          shaderTemplate={data.shaderTemplate}
+          parameters={data.parameters}
         />
       </div>
       <div className="flex flex-row pb-2.5">

@@ -7,7 +7,15 @@ const nextConfig: NextConfig = {
       test: /\.(glsl|vs|fs|vert|frag)$/,
       use: ['raw-loader'],
     })
-    return config
+    return config;
+  },
+  turbopack: {
+    rules: {
+      '*.{glsl,vs,fs,vert,frag}': {
+        loaders: ['raw-loader'],
+        as: '*.js',
+      },
+    },
   },
 };
 

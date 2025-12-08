@@ -1,5 +1,6 @@
 "use client";
 
+import { BaseNode } from "@/nodes/base-node";
 import InvertNode from "@/nodes/invert-node";
 import SimplexNode from "@/nodes/simplex-node";
 import {
@@ -23,13 +24,12 @@ const nodeTypes = {
   invertNode: InvertNode,
 };
 
-const initialNodes: Node[] = [
+const initialNodes: BaseNode[] = [
   {
     id: "n1",
     position: { x: 0, y: 0 },
     data: {
-      seed: 0,
-      octaves: 1,
+      ownValues: [0, 1],
     },
     type: "simplexNode",
   },
@@ -37,6 +37,7 @@ const initialNodes: Node[] = [
     id: "n2",
     position: { x: 100, y: 100 },
     data: {
+      ownValues: [1],
     },
     type: "invertNode",
   },
@@ -44,6 +45,7 @@ const initialNodes: Node[] = [
     id: "n3",
     position: { x: 100, y: 100 },
     data: {
+      ownValues: [1],
     },
     type: "invertNode",
   },

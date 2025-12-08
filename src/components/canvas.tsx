@@ -72,21 +72,25 @@ const previewSize = 512;
 
 function Canvas({
   shaderTemplate,
-  uniformNames,
-  uniformValues,
+  parameters,
 }: {
   shaderTemplate?: string,
-  uniformNames?: {
-    name: string,
-    type: string,
-  }[],
-  uniformValues?: {
-    value: unknown,
-  }[],
+  parameters?: {
+    definitions: {
+      name: string,
+      id: string,
+      uniformName: string,
+      uniformType: string,
+      inputType: string,
+    }[],
+    values: unknown[],
+  },
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [program, setProgram] = useState<WebGLProgram | null>(null);
   const [src, setSrc] = useState<string | null>(null);
+
+  const parameterDefinitions = parameters?.definitions;
 
   // Reconstruct shader when connected nodes change
   useEffect(() => {
@@ -96,13 +100,17 @@ function Canvas({
     const gl = canvas.getContext('webgl2');
     if (gl === null) throw new Error("Couldn't get webgl context.");
 
-    if (shaderTemplate === undefined || uniformNames === undefined) {
+    if (shaderTemplate === undefined || parameterDefinitions === undefined) {
       return;
     }
 
-    const uniformsSrc = uniformNames.map(({ name, type }) => {
-      return `uniform ${type} ${name};`; // TODO: remove hardcoded float type
-    }).join("\n");
+    console.log(parameterDefinitions);
+
+    const uniformsSrc = parameterDefinitions.map(({ id, uniformName, uniformType }) => {
+      return `uniform ${uniformType} ${id}_${uniformName};`;
+    }).join("\n")
+
+    console.log(uniformsSrc);
 
     const finalFsSrc = fsSrc
       .replace(
@@ -118,7 +126,7 @@ function Canvas({
 
     setProgram(() => createProgram(gl, vsSrc, finalFsSrc));
     setSrc(() => finalFsSrc);
-  }, [shaderTemplate, uniformNames]);
+  }, [shaderTemplate, parameterDefinitions]);
 
   useEffect(() => {
     console.log("RE-RENDER");
@@ -128,7 +136,7 @@ function Canvas({
     if (gl === null) throw new Error("Couldn't get webgl context.");
 
     // Clear the canvas if a node gets disconected or something
-    if (program === null || shaderTemplate === undefined || uniformNames === undefined || uniformValues === undefined) {
+    if (program === null || shaderTemplate === undefined || parameters === undefined) {
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       return;
@@ -136,26 +144,28 @@ function Canvas({
 
     gl.useProgram(program);
 
-    uniformNames.forEach(({ name, type }, i) => {
-      const location = gl.getUniformLocation(program, name);
+    parameters.definitions.forEach(({ id, uniformName, uniformType }, i) => {
+      const location = gl.getUniformLocation(program, `${id}_${uniformName}`);
       if (location === null) {
-        console.log(shaderTemplate);
-        console.log(uniformNames);
-        console.log(uniformValues);
-        console.log(src);
-        console.error(gl.getError().toString(16));
-        throw new Error(`Couldn't get location of uniform: \`${name}.\``);
+        // console.log(shaderTemplate);
+        // console.log(uniformNames);
+        // console.log(uniformValues);
+        // console.log(src);
+        // console.error(gl.getError().toString(16));
+        throw new Error(`Couldn't get location of uniform: \`${id}_${uniformName}.\``);
       }
 
-      const value = uniformValues[i].value;
-      switch (type) {
+      const value = parameters.values[i];
+      switch (uniformType) {
         case "float":
-          if (typeof value !== 'number')
-            throw new Error(`Invalid value type (${typeof value}) for uniform type (${type})`);
+          if (typeof value !== 'number') {
+            console.log(value);
+            throw new Error(`Invalid value type (${typeof value}) for uniform type (${uniformType})`);
+          }
           gl.uniform1f(location, value);
           break;
         default:
-          throw new Error(`Unform type: \`${type}\` invalid or not implemented.`)
+          throw new Error(`Unform type: \`${uniformType}\` invalid or not implemented.`)
       }
     });
 
@@ -164,7 +174,7 @@ function Canvas({
 
     gl.viewport(0, 0, previewSize, previewSize);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }, [shaderTemplate, uniformNames, uniformValues, program, src]);
+  }, [shaderTemplate, parameters, program, src]);
 
   return (
     <canvas
