@@ -22,26 +22,25 @@ export function insertTemplateIntoInputCalls(
       if (outputVar === undefined) throw new Error("No output variable");
       if (uvVar === undefined) throw new Error("No uv variable");
 
-      // To fix the case in wich the output variable name is inside the input template
-      const outputVarWithId = `${id}_${outputVar}`;
-      const uvVarWithId = `${id}_${uvVar}`;
-
+      // Prepend the output and uv coordinates variables to fix the case
+      // in wich the output variable name is inside the input template.
+      // For example if I apply two times the same node.
       const processedInputTemplate = inputTemplate
         .replace(/^[\s\n]*/, "")
         .replace(/[\s\n]*$/, "")
         .replaceAll(/^/gm, "  ")
-        .replaceAll("$OUT", outputVarWithId)
-        .replaceAll("$UV", uvVarWithId);
+        .replaceAll("$OUT", `${id}_${outputVar}`)
+        .replaceAll("$UV", `${id}_${uvVar}`);
+
+      const regexVars = new RegExp(`(\\W)(${outputVar}|${uvVar})(\\W)`, "g");
 
       const processedInputCallToReplace = inputCallToReplace
-        .replaceAll(outputVar, outputVarWithId)
-        .replaceAll(uvVar, uvVarWithId)
+        .replaceAll(regexVars, `$1${id}_$2$3`)
 
       // TODO: do something more robust that doesnt replace
       // ocurrences of a variable inside other symbols
       result = result
-        .replaceAll(outputVar, outputVarWithId)
-        .replaceAll(uvVar, uvVarWithId)
+        .replaceAll(regexVars, `$1${id}_$2$3`)
         .replace(processedInputCallToReplace, `{\n${processedInputTemplate}\n}`);
     }
   }
