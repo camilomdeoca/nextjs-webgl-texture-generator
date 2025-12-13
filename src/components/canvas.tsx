@@ -104,13 +104,13 @@ function Canvas({
       return;
     }
 
-    console.log(parameterDefinitions);
+    // console.log(parameterDefinitions);
 
     const uniformsSrc = parameterDefinitions.map(({ id, uniformName, uniformType }) => {
       return `uniform ${uniformType} ${id}_${uniformName};`;
     }).join("\n")
 
-    console.log(uniformsSrc);
+    // console.log(uniformsSrc);
 
     const finalFsSrc = fsSrc
       .replace(

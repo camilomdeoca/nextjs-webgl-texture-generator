@@ -1,6 +1,6 @@
 import { NodeProps, useNodeConnections, useNodesData, useReactFlow } from "@xyflow/react";
 import { BaseNodeComponent, BaseNode } from "./base-node";
-import { useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { insertTemplateIntoInputCalls, prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";
 
 const invertNodeCodeTemplate = `
@@ -18,10 +18,10 @@ const invertNodeParameters: {
   inputType: string,
 }[] = [
   {
-      name: "Brightness",
-      uniformName: "brightness",
-      uniformType: "float",
-      inputType: "range",
+    name: "Brightness",
+    uniformName: "brightness",
+    uniformType: "float",
+    inputType: "range",
   },
   // {
   //     name: "Scale",
@@ -31,51 +31,59 @@ const invertNodeParameters: {
   // },
 ];
 
+const invertNodeInputs = [
+  { name: "Input", handleId: "in" },
+];
+
 function InvertNode({ id, data }: NodeProps<BaseNode>) {
   const { updateNodeData } = useReactFlow<BaseNode>();
 
-  const connection = useNodeConnections({
+  const unorderedConnections = useNodeConnections({
     handleType: "target",
-    handleId: "in",
+    // handleId: "in",
   });
 
-  const inputData = useNodesData<BaseNode>(connection?.[0]?.source);
+  // FIXME: This is O(n^2)
+  const inputNodesIds = invertNodeInputs.reduce<string[] | null>((acc, { handleId }) => {
+    if (acc === null) return null;
+    const id = unorderedConnections.find(conn => conn.targetHandle == handleId)?.source;
+    return id ? [...acc, id] : null;
+  }, []) || [];
+
+  const inputsData = useNodesData<BaseNode>(inputNodesIds);
+
+  const inputsShaderTemplates = inputsData.map(({ data }) => data.shaderTemplate);
 
   const finalTemplate = useMemo(() => {
-    console.log("AAAAAAAAAAAAAAAAA");
+    if (inputsShaderTemplates.length !== invertNodeInputs.length) return undefined;
+    if (!inputsShaderTemplates.every(elem => elem !== undefined)) return undefined;
+
     const templateWithUniformsPrepended = prependUniformVariablesWithId(
       id,
       invertNodeCodeTemplate,
       invertNodeParameters.map(({ uniformName }) => uniformName),
     );
 
-    const finalTemplate = inputData?.data.shaderTemplate !== undefined
-      ? insertTemplateIntoInputCalls(
-        id,
-        templateWithUniformsPrepended,
-        [inputData?.data.shaderTemplate],
-      )
-      : undefined;
-
-    return finalTemplate;
-  }, [id, inputData?.data.shaderTemplate]);
+    return insertTemplateIntoInputCalls(
+      id,
+      templateWithUniformsPrepended,
+      inputsShaderTemplates,
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, JSON.stringify(inputsShaderTemplates)]);
   
   useEffect(() => {
-    updateNodeData(id, {
-      // In nodes without inputs we dont need to change `shaderTemplate` ever
-      // so we could set it just once and save the function call.
-      shaderTemplate: finalTemplate,
-    });
-  }, [
-    id,
-    updateNodeData,
-    finalTemplate,
-  ]);
+    updateNodeData(id, { shaderTemplate: finalTemplate });
+  }, [id, updateNodeData, finalTemplate]);
+  
+  const inputDefinitions = (() => {
+    const definitions = inputsData.map(({ data }) => data.parameters?.definitions);
+    if (!definitions.every(elem => elem !== undefined)) return [];
+    return definitions.flat();
+  })();
   
   useEffect(() => {
     updateNodeData(id, prev => ({
-      // In nodes without inputs we dont need to change `shaderTemplate` ever
-      // so we could set it just once and save the function call.
       parameters: {
         definitions: [
           ...invertNodeParameters.map(({ name, uniformName, uniformType, inputType }) => ({
@@ -85,35 +93,25 @@ function InvertNode({ id, data }: NodeProps<BaseNode>) {
             uniformType,
             inputType,
           })),
-          ...inputData?.data.parameters?.definitions || [],
+          ...inputDefinitions,
         ],
         values: prev.data.parameters?.values || [],
       },
-      // shaderTemplate: finalTemplate,
     }));
-  }, [
-    id,
-    updateNodeData,
-    finalTemplate,
-    inputData?.data.parameters?.definitions,
-  ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, updateNodeData, JSON.stringify(inputDefinitions)]);
 
   useEffect(() => {
     updateNodeData(id, prev => ({
-      // In nodes without inputs we dont need to change `shaderTemplate` ever
-      // so we could set it just once and save the function call.
       parameters: {
         definitions: prev.data.parameters?.definitions || [],
-        values: [...prev.data.ownValues, ...(inputData?.data.parameters?.values || [])],
+        values: [
+          ...prev.data.ownValues,
+          ...inputsData.flatMap(({ data }) => data.parameters?.values || []),
+        ],
       },
-      // shaderTemplate: finalTemplate,
     }));
-  }, [
-    id,
-    updateNodeData,
-    finalTemplate,
-    inputData?.data.parameters?.values,
-  ]);
+  }, [id, updateNodeData, inputsData]);
 
   const [ownValues, setOwnValues] = useState(data.ownValues);
 
@@ -126,7 +124,7 @@ function InvertNode({ id, data }: NodeProps<BaseNode>) {
           id="seed"
           type={inputType}
           step={0.001}
-          onChange={(e) => {
+          onChange={(e: ChangeEvent<HTMLInputElement>) => {
             setOwnValues((prev) => {
               const newValues = [...prev];
               newValues[i] = parseFloat(e.target.value);
@@ -142,7 +140,6 @@ function InvertNode({ id, data }: NodeProps<BaseNode>) {
                 throw new Error("`parameters` should be set by now because its set at the creation of the component.")
 
               return {
-                // TODO: figure out what to do for nodes that have inputs
                 parameters: {
                   ...prev.data.parameters,
                   values: [...newValues, ...prev.data.parameters?.values.slice(newValues.length)]
@@ -165,7 +162,7 @@ function InvertNode({ id, data }: NodeProps<BaseNode>) {
       data={data}
     >
       {inputs}
-      {finalTemplate}
+      {/* finalTemplate */}
     </BaseNodeComponent>
   );
 }
