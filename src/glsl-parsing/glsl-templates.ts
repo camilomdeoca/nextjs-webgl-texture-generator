@@ -54,3 +54,14 @@ export function prependUniformVariablesWithId(id: string, template: string, unif
   }
   return result;
 }
+
+// TODO: try tagged templates
+export function preprocessTemplate(template: string): string {
+  const firstLineIndent = template.match(/^\s*\n(\s+)/)?.[1];
+
+  if (!firstLineIndent) return template;
+  return template
+    .replaceAll(new RegExp(`^${firstLineIndent}`, "gm"), "")
+    .replace(/^\s*\n/, "\n")
+    .replace(/\n\s+$/, "\n");
+}

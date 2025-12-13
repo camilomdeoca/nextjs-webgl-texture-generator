@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { insertTemplateIntoInputCalls, prependUniformVariablesWithId } from './glsl-templates';
+import { insertTemplateIntoInputCalls, prependUniformVariablesWithId, preprocessTemplate } from './glsl-templates';
 
 const simplexNodeCodeTemplate = `
 vec3 col = vec3(simplex3d(vec3($UV, $seed) * $scale) * 0.5 + 0.5);
@@ -132,5 +132,41 @@ $OUT = vec4(col, 1.0);
   expect(prependUniformVariablesWithId("n1", template, ["seed", "scale"])).toBe(`
 vec3 col = vec3(simplex3d(vec3($UV, n1_seed) * n1_scale) * 0.5 + 0.5);
 $OUT = vec4(col, 1.0);
+`);
+});
+
+test("preprocess template removing whole template indentation", () => {
+  const template = `
+    int algo;
+    float otra = llamada();
+    if (algo == 1) {
+        $OUT = 1;
+    }
+  `;
+
+  expect(preprocessTemplate(template)).toBe(`
+int algo;
+float otra = llamada();
+if (algo == 1) {
+    $OUT = 1;
+}
+`);
+});
+
+test("preprocess template with spaces in first and last line", () => {
+  const template = `   
+    int algo;
+    float otra = llamada();
+    if (algo == 1) {
+        $OUT = 1;
+    }
+ `;
+
+  expect(preprocessTemplate(template)).toBe(`
+int algo;
+float otra = llamada();
+if (algo == 1) {
+    $OUT = 1;
+}
 `);
 });

@@ -1,8 +1,6 @@
 "use client";
 
-import { BaseNode } from "@/nodes/base-node";
-import InvertNode from "@/nodes/invert-node";
-import SimplexNode from "@/nodes/simplex-node";
+import BaseNode, { type BaseNode as BaseNodeType } from "@/nodes/base-node";
 import {
   ReactFlow,
   Background,
@@ -20,34 +18,36 @@ import "@xyflow/react/dist/style.css";
 import { useCallback, useState } from "react";
 
 const nodeTypes = {
-  simplexNode: SimplexNode,
-  invertNode: InvertNode,
+  baseNode: BaseNode,
 };
 
-const initialNodes: BaseNode[] = [
+const initialNodes: BaseNodeType[] = [
   {
     id: "n1",
     position: { x: 0, y: 0 },
     data: {
+      type: "simplex",
       ownValues: [0, 1],
     },
-    type: "simplexNode",
+    type: "baseNode",
   },
   {
     id: "n2",
     position: { x: 100, y: 100 },
     data: {
+      type: "invert",
       ownValues: [1],
     },
-    type: "invertNode",
+    type: "baseNode",
   },
   {
     id: "n3",
     position: { x: 100, y: 100 },
     data: {
+      type: "invert",
       ownValues: [1],
     },
-    type: "invertNode",
+    type: "baseNode",
   },
 ];
 

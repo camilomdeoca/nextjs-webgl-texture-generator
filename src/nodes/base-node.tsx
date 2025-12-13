@@ -1,8 +1,11 @@
-import Canvas from "@/components/canvas";
-import { Handle, Node, Position } from "@xyflow/react";
-import { ReactNode } from "react";
+import { NodeProps, useNodeConnections, useNodesData, useReactFlow, Node } from "@xyflow/react";
+import { BaseNodeComponent } from "./base-node-component";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { insertTemplateIntoInputCalls, prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";
+import { nodeDefinitions } from "./definitions";
 
 export type BaseNodeData = {
+  type: string,
   shaderTemplate?: string,
   parameters?: {
     definitions: {
@@ -19,76 +22,150 @@ export type BaseNodeData = {
 
 export type BaseNode = Node<BaseNodeData>;
 
-export type BaseNodeComponentParameters = {
-  name: string,
-  // parameters: { name: string, type: string }[],
-  inputs: { name: string }[],
-  outputs: { name: string }[],
-  children?: ReactNode,
-  data: BaseNodeData,
-};
+function BaseNode({ id, data }: NodeProps<BaseNode>) {
+  const { updateNodeData } = useReactFlow<BaseNode>();
 
-export function BaseNodeComponent({
-  name,
-  inputs,
-  outputs,
-  children,
-  data,
-}: BaseNodeComponentParameters) {
-  const input_components = inputs.map((input, i) => (
-    <div className="relative flex flex-row mr-auto" key={i}>
-      <Handle
-        type="target"
-        position={Position.Left}
-        onConnect={(params) => console.log('handle onConnect (input)', params)}
-        isConnectable={true}
-        id={input.name}
-      />
-      <label
-        htmlFor={input.name}
-        className="text-xs px-2.5"
-      >
-        {input.name || "No name"}
-      </label>
-    </div>
-  ));
+  const unorderedConnections = useNodeConnections({
+    handleType: "target",
+    // handleId: "in",
+  });
 
-  const output_components = outputs.map((output, i) => (
-    <div className="relative flex flex-row ml-auto" key={i}>
-      <Handle
-        type="source"
-        position={Position.Right}
-        onConnect={(params) => console.log('handle onConnect (input)', params)}
-        isConnectable={true}
-        id={output.name}
-      />
-      <label
-        htmlFor={output.name}
-        className="text-xs px-2.5"
-      >
-        {output.name || "No name"}
-      </label>
-    </div>
-  ));
+  const type = data.type;
+  const definition = nodeDefinitions.get(type);
 
-  return (
-    <div className="w-48">
-      <div className="p-2.5">
-        <p className="text-base">{name}</p>
-      </div>
-      <div className="px-2.5 pt-2.5">
-        {children}
-      </div>
-      <div className="p-2.5">
-        <Canvas
-          shaderTemplate={data.shaderTemplate}
-          parameters={data.parameters}
+  if (!definition) {
+    throw new Error("Invalid")
+  }
+
+  // FIXME: This is O(n^2)
+  const inputNodesIds = definition.inputs.reduce<string[] | null>((acc, { handleId }) => {
+    if (acc === null) return null;
+    const id = unorderedConnections.find(conn => conn.targetHandle == handleId)?.source;
+    return id ? [...acc, id] : null;
+  }, []) || [];
+
+  const inputsData = useNodesData<BaseNode>(inputNodesIds);
+
+  const inputsShaderTemplates = inputsData.map(({ data }) => data.shaderTemplate);
+
+  const finalTemplate = useMemo(() => {
+    if (inputsShaderTemplates.length !== definition.inputs.length) return undefined;
+    if (!inputsShaderTemplates.every(elem => elem !== undefined)) return undefined;
+
+    const templateWithUniformsPrepended = prependUniformVariablesWithId(
+      id,
+      definition.template,
+      definition.parameters.map(({ uniformName }) => uniformName),
+    );
+
+    return insertTemplateIntoInputCalls(
+      id,
+      templateWithUniformsPrepended,
+      inputsShaderTemplates,
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    definition.inputs.length,
+    definition.parameters,
+    definition.template,
+    id,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(inputsShaderTemplates),
+  ]);
+  
+  useEffect(() => {
+    updateNodeData(id, { shaderTemplate: finalTemplate });
+  }, [id, updateNodeData, finalTemplate]);
+  
+  const inputDefinitions = (() => {
+    const definitions = inputsData.map(({ data }) => data.parameters?.definitions);
+    if (!definitions.every(elem => elem !== undefined)) return [];
+    return definitions.flat();
+  })();
+  
+  useEffect(() => {
+    updateNodeData(id, prev => ({
+      parameters: {
+        definitions: [
+          ...definition.parameters.map(({ name, uniformName, uniformType, inputType }) => ({
+            name,
+            id,
+            uniformName,
+            uniformType,
+            inputType,
+          })),
+          ...inputDefinitions,
+        ],
+        values: prev.data.parameters?.values || [],
+      },
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [definition.parameters, id, JSON.stringify(inputDefinitions), updateNodeData]);
+
+  useEffect(() => {
+    updateNodeData(id, prev => ({
+      parameters: {
+        definitions: prev.data.parameters?.definitions || [],
+        values: [
+          ...prev.data.ownValues,
+          ...inputsData.flatMap(({ data }) => data.parameters?.values || []),
+        ],
+      },
+    }));
+  }, [id, updateNodeData, inputsData]);
+
+  const [ownValues, setOwnValues] = useState(data.ownValues);
+
+  const inputs = definition.parameters.map(({ name, inputType }, i) => {
+    return (
+      <div key={name}>
+        <label className="block text-left" htmlFor="seed">{name}</label>
+        <input
+          className="w-full nodrag"
+          id="seed"
+          type={inputType}
+          step={0.001}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => {
+            setOwnValues((prev) => {
+              const newValues = [...prev];
+              newValues[i] = parseFloat(e.target.value);
+
+
+              return newValues;
+            });
+            updateNodeData(id, prev => {
+              const newValues = [...prev.data.ownValues];
+              newValues[i] = parseFloat(e.target.value);
+
+              if (prev.data.parameters === undefined)
+                throw new Error("`parameters` should be set by now because its set at the creation of the component.")
+
+              return {
+                parameters: {
+                  ...prev.data.parameters,
+                  values: [...newValues, ...prev.data.parameters?.values.slice(newValues.length)]
+                },
+                ownValues: newValues,
+              };
+            });
+          }}
+          value={ownValues[i] as number} // TODO: Do something better (might not be a number)
         />
       </div>
-      <div className="flex flex-row pb-2.5">
-        <div className="flex flex-col w-full gap-3">{input_components}</div>
-        <div className="flex flex-col w-full gap-3">{output_components}</div>
-      </div>
-    </div>
+    );
+  });
+
+  return (
+    <BaseNodeComponent
+      name="Invert"
+      inputs={definition.inputs}
+      outputs={[{ name: "out" }]}
+      data={data}
+    >
+      {inputs}
+      {/* finalTemplate */}
+    </BaseNodeComponent>
   );
 }
+
+export default BaseNode;
