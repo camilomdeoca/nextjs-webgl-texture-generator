@@ -16,6 +16,7 @@ import {
   type Edge,
   ReactFlowInstance,
   useReactFlow,
+  ReactFlowJsonObject,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useState } from "react";
@@ -66,11 +67,33 @@ const initialEdges: Edge[] = [
 
 const flowKey = 'texture-generator-flow';
 
-function loadFlow() {
+// TODO: check also inside nodes and edges
+function isReactFlowJsonObject(flow: unknown): flow is ReactFlowJsonObject {
+  if (typeof flow !== "object" || flow === null) return false;
+
+  if (!("nodes" in flow) || !Array.isArray(flow.nodes)) return false;
+  if (!("edges" in flow) || !Array.isArray(flow.edges)) return false;
+  if (!("viewport" in flow) || typeof flow.viewport !== "object" || flow.viewport === null) return false;
+  if (!("x" in flow.viewport) || typeof flow.viewport.x !== "number") return false;
+  if (!("y" in flow.viewport) || typeof flow.viewport.y !== "number") return false;
+  if (!("zoom" in flow.viewport) || typeof flow.viewport.zoom !== "number") return false;
+  return true;
+}
+
+function loadFlowFromLocalStorage(): ReactFlowJsonObject | undefined {
   const serializedFlow = localStorage.getItem(flowKey);
   const flow = serializedFlow && JSON.parse(serializedFlow);
 
-  if (flow && flow.nodes && flow.edges && flow.viewport) return flow;
+  if (isReactFlowJsonObject(flow)) return flow;
+  else return undefined;
+}
+
+async function loadFlowFromFile(file: File): Promise<ReactFlowJsonObject | undefined> {
+  if (!file) return;
+  const text = await file.text();
+  const flow = JSON.parse(text);
+  
+  if (isReactFlowJsonObject(flow)) return flow;
   else return undefined;
 }
 
@@ -79,6 +102,14 @@ export default function Editor() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const { setViewport } = useReactFlow();  
+  const [showDragDestination, setShowDragDestination] = useState(false);
+
+  const loadFlowIntoInstance = useCallback((flow: ReactFlowJsonObject) => {
+    const { x = 0, y = 0, zoom = 1 } = flow.viewport;
+    setNodes(flow.nodes || []);
+    setEdges(flow.edges || []);
+    setViewport({ x, y, zoom });
+  }, [setViewport]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) =>
@@ -106,16 +137,10 @@ export default function Editor() {
 
   const onLoad = useCallback(() => {
     (async () => {
-      const flow = loadFlow();
-
-      if (flow) {
-        const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-        setNodes(flow.nodes || []);
-        setEdges(flow.edges || []);
-        setViewport({ x, y, zoom });
-      }
+      const flow = loadFlowFromLocalStorage();
+      if (flow) loadFlowIntoInstance(flow);
     })();
-  }, [setViewport]);
+  }, [loadFlowIntoInstance]);
   
   const onExport = useCallback(() => {
     if (rfInstance) {
@@ -138,30 +163,24 @@ export default function Editor() {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const text = await file.text();
-      const flow = JSON.parse(text);
-
-      if (flow) {
-        const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-        setNodes(flow.nodes || initialNodes);
-        setEdges(flow.edges || initialEdges);
-        setViewport({ x, y, zoom });
-      }
+      const flow = await loadFlowFromFile(file);
+      if (flow) loadFlowIntoInstance(flow);
     };
 
     input.click();
-  }, [setViewport]);
+  }, [loadFlowIntoInstance]);
 
   useEffect(() => {
     (async () => {
-      const flow = loadFlow();
-
-      const { x = 0, y = 0, zoom = 1 } = flow?.viewport || {};
-      setNodes(flow?.nodes || initialNodes);
-      setEdges(flow?.edges || initialEdges);
-      setViewport({ x, y, zoom });
+      const flow = loadFlowFromLocalStorage();
+      if (flow) loadFlowIntoInstance(flow);
+      else loadFlowIntoInstance({
+          nodes: initialNodes,
+          edges: initialEdges,
+          viewport: { x: 0, y: 0, zoom: 1 },
+      })
     })();
-  }, [setViewport]);
+  }, [loadFlowIntoInstance, setViewport]);
 
   // TODO: make auto-saving toggleable
   // useEffect(() => {
@@ -189,7 +208,42 @@ export default function Editor() {
           },
         ]}
       />
-      <div className="flex-1">
+      <div
+        onDragOver={e => {
+          setShowDragDestination(true);
+          e.preventDefault()
+        }}
+        onDragEnter={e => {
+          e.preventDefault();
+          setShowDragDestination(true);
+        }}
+        onDragLeave={e => {
+          e.preventDefault();
+          setShowDragDestination(false);
+        }}
+        onDrop={e => {
+          e.preventDefault();
+          setShowDragDestination(false);
+          const file = e.dataTransfer.files[0];
+          if (!file) return;
+          loadFlowFromFile(file)
+            .then(flow => {
+              if (flow) loadFlowIntoInstance(flow);
+            });
+
+        }}
+        className="relative flex-1"
+      >
+        {showDragDestination && (
+          <div
+            className={`
+              absolute inset-0 bg-neutral-950/50 z-10 pointer-events-none text-9xl
+              flex items-center justify-center border-3 border-dashed border-amber-400/50
+            `}
+          >
+              Drop here
+          </div>
+        )}
         <ReactFlow
           colorMode="dark"
           nodeTypes={nodeTypes}
