@@ -38,7 +38,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
     `),
     parameters: [
       { name: "Seed", uniformName: "seed", uniformType: "float", inputType: "number", defaultValue: 0 },
-      { name: "Scale", uniformName: "scale", uniformType: "float", inputType: "range", defaultValue: 1 },
+      { name: "Scale", uniformName: "scale", uniformType: "float", inputType: "range", defaultValue: 10 },
     ],
     inputs: [],
   }],

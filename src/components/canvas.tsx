@@ -71,9 +71,11 @@ function createProgram(gl: WebGL2RenderingContext, vsSrc: string, fsSrc: string)
 const previewSize = 512;
 
 function Canvas({
+  className,
   shaderTemplate,
   parameters,
 }: {
+  className?: string,
   shaderTemplate?: string,
   parameters?: {
     definitions: {
@@ -178,7 +180,7 @@ function Canvas({
 
   return (
     <canvas
-      className="w-full aspect-square"
+      className={className + " w-full aspect-square"}
       ref={canvasRef}
       width={previewSize}
       height={previewSize}
