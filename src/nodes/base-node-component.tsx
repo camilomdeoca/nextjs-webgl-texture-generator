@@ -1,14 +1,8 @@
 import Canvas from "@/components/canvas";
-import { Handle, HandleProps, Position, useNodeConnections } from "@xyflow/react";
+import { Handle, Position } from "@xyflow/react";
 import { ReactNode } from "react";
 import { BaseNodeData } from "./base-node";
-
-function OneConnectionHandle(props: HandleProps) {
-  const connections = useNodeConnections({ handleType: props.type });
-  return (
-    <Handle {...props} isConnectable={connections.length < 1} />
-  );
-}
+import { OneConnectionHandle } from "./one-connection-handle";
 
 export type BaseNodeComponentParameters = {
   name: string,

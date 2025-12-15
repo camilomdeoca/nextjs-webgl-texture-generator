@@ -74,8 +74,6 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
   const inputsShaderTemplates = inputsData.map(({ data }) => data.shaderTemplate);
 
   const finalTemplate = useMemo(() => {
-    // If 
-    if (!data.parameters || data.parameters.definitions.length === 0) return undefined;
     if (inputsShaderTemplates.length !== definition.inputs.length) return undefined;
     if (!inputsShaderTemplates.every(elem => elem !== undefined)) return undefined;
 
@@ -92,7 +90,6 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    data.parameters,
     definition.inputs.length,
     definition.parameters,
     definition.template,
@@ -166,7 +163,6 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
       data={data}
     >
       {inputs}
-      {/* finalTemplate */}
     </BaseNodeComponent>
   );
 }
