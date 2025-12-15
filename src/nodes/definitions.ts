@@ -7,6 +7,7 @@ export type NodeDefinition = {
     uniformName: string,
     uniformType: string,
     inputType: string,
+    defaultValue: unknown,
   }[],
   inputs: {
     name: string,
@@ -24,7 +25,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
       $OUT = vec4(col * $brightness, 1.0);
     `),
     parameters: [
-      { name: "Brightness", uniformName: "brightness", uniformType: "float", inputType: "range" },
+      { name: "Brightness", uniformName: "brightness", uniformType: "float", inputType: "range", defaultValue: 1 },
     ],
     inputs: [
       { name: "Input", handleId: "in" },
@@ -36,8 +37,8 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
       $OUT = vec4(col, 1.0);
     `),
     parameters: [
-      { name: "Seed", uniformName: "seed", uniformType: "float", inputType: "number" },
-      { name: "Scale", uniformName: "scale", uniformType: "float", inputType: "range" },
+      { name: "Seed", uniformName: "seed", uniformType: "float", inputType: "number", defaultValue: 0 },
+      { name: "Scale", uniformName: "scale", uniformType: "float", inputType: "range", defaultValue: 1 },
     ],
     inputs: [],
   }],

@@ -45,17 +45,19 @@ function MenubarButton({
 }
 
 type MenubarParameters = {
+  className: string,
   menus: MenubarButtonParameters[],
 };
 
 export default function Menubar({
+  className,
   menus,
 }: MenubarParameters) {
   return (
     <div
-      className={`
+      className={className + `
         flex flex-row
-        bg-neutral-800 text-sm font-medium p-0.5 relative shadow-md shadow-black z-10
+        bg-neutral-800 text-sm font-medium p-0.5 relative
         border-b border-neutral-700
       `}
     >

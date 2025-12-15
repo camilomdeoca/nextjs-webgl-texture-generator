@@ -1,6 +1,7 @@
 "use client";
 
 import Menubar from "@/components/menubar";
+import NodesPalette from "@/components/nodes-palette";
 import BaseNode, { type BaseNode as BaseNodeType } from "@/nodes/base-node";
 import {
   ReactFlow,
@@ -196,6 +197,7 @@ export default function Editor() {
   return (
     <div className="w-full h-full flex flex-col">
       <Menubar
+        className="shadow-md shadow-black z-20"
         menus={[
           {
             label: "File",
@@ -208,55 +210,58 @@ export default function Editor() {
           },
         ]}
       />
-      <div
-        onDragOver={e => {
-          setShowDragDestination(true);
-          e.preventDefault()
-        }}
-        onDragEnter={e => {
-          e.preventDefault();
-          setShowDragDestination(true);
-        }}
-        onDragLeave={e => {
-          e.preventDefault();
-          setShowDragDestination(false);
-        }}
-        onDrop={e => {
-          e.preventDefault();
-          setShowDragDestination(false);
-          const file = e.dataTransfer.files[0];
-          if (!file) return;
-          loadFlowFromFile(file)
-            .then(flow => {
-              if (flow) loadFlowIntoInstance(flow);
-            });
+      <div className="flex flex-row w-full h-full"  >
+        <NodesPalette className="w-50 h-full shadow-md shadow-black z-10" />
+        <div
+          onDragOver={e => {
+            setShowDragDestination(true);
+            e.preventDefault()
+          }}
+          onDragEnter={e => {
+            e.preventDefault();
+            setShowDragDestination(true);
+          }}
+          onDragLeave={e => {
+            e.preventDefault();
+            setShowDragDestination(false);
+          }}
+          onDrop={e => {
+            e.preventDefault();
+            setShowDragDestination(false);
+            const file = e.dataTransfer.files[0];
+            if (!file) return;
+            loadFlowFromFile(file)
+              .then(flow => {
+                if (flow) loadFlowIntoInstance(flow);
+              });
 
-        }}
-        className="relative flex-1"
-      >
-        {showDragDestination && (
-          <div
-            className={`
-              absolute inset-0 bg-neutral-950/50 z-10 pointer-events-none text-9xl
-              flex items-center justify-center border-3 border-dashed border-amber-400/50
-            `}
-          >
-              Drop here
-          </div>
-        )}
-        <ReactFlow
-          colorMode="dark"
-          nodeTypes={nodeTypes}
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onInit={setRfInstance}
+          }}
+          className="relative flex-1"
         >
-          <Background />
-          <Controls />
-        </ReactFlow>
+          {showDragDestination && (
+            <div
+              className={`
+                absolute inset-0 bg-neutral-950/50 z-10 pointer-events-none text-9xl
+                flex items-center justify-center border-3 border-dashed border-amber-400/50
+              `}
+            >
+                Drop here
+            </div>
+          )}
+          <ReactFlow
+            colorMode="dark"
+            nodeTypes={nodeTypes}
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onInit={setRfInstance}
+          >
+            <Background />
+            <Controls />
+          </ReactFlow>
+        </div>
       </div>
     </div>
   );
