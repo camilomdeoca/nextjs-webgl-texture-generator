@@ -36,7 +36,7 @@ const initialNodes: BaseNodeType[] = [
   },
   {
     id: "n2",
-    position: { x: 100, y: 100 },
+    position: { x: 200, y: 100 },
     data: {
       type: "invert",
       ownValues: [1],
@@ -45,7 +45,7 @@ const initialNodes: BaseNodeType[] = [
   },
   {
     id: "n3",
-    position: { x: 100, y: 100 },
+    position: { x: 400, y: 100 },
     data: {
       type: "invert",
       ownValues: [1],
@@ -70,7 +70,7 @@ function loadFlow() {
   const serializedFlow = localStorage.getItem(flowKey);
   const flow = serializedFlow && JSON.parse(serializedFlow);
 
-  if (flow.nodes && flow.edges && flow.viewport) return flow;
+  if (flow && flow.nodes && flow.edges && flow.viewport) return flow;
   else return undefined;
 }
 
@@ -156,25 +156,23 @@ export default function Editor() {
     (async () => {
       const flow = loadFlow();
 
-      if (flow) {
-        const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-        setNodes(flow.nodes || initialNodes);
-        setEdges(flow.edges || initialEdges);
-        setViewport({ x, y, zoom });
-      }
+      const { x = 0, y = 0, zoom = 1 } = flow?.viewport || {};
+      setNodes(flow?.nodes || initialNodes);
+      setEdges(flow?.edges || initialEdges);
+      setViewport({ x, y, zoom });
     })();
   }, [setViewport]);
 
   // TODO: make auto-saving toggleable
-  useEffect(() => {
-    const interval = setInterval(() => {
-      onSave();
-    }, 5000)
-
-    return (() => {
-      clearInterval(interval)
-    })
-  }, [onSave])
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     onSave();
+  //   }, 5000)
+  //
+  //   return (() => {
+  //     clearInterval(interval)
+  //   })
+  // }, [onSave])
 
   return (
     <div className="w-full h-full flex flex-col">
