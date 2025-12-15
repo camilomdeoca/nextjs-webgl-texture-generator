@@ -9,6 +9,7 @@ type NodeCardParameters = {
   id: string,
   className?: string,
   keyName: string
+  name: string,
   shaderTemplate?: string,
   parameters?: {
     definitions: {
@@ -26,6 +27,7 @@ function NodeCard({
   id,
   className,
   keyName,
+  name,
   shaderTemplate,
   parameters,
 }: NodeCardParameters) {
@@ -55,7 +57,7 @@ function NodeCard({
         parameters={parameters}
       />
       <div className="text-sm font-normal pt-1 text-center">
-        {keyName}
+        {name}
       </div>
     </div>
   );
@@ -69,9 +71,10 @@ export default function NodesPalette({
   className,
 }: NodesPaletteParameters) {
   const data = useMemo(() => {
-    const result = nodeDefinitions.entries().map(([key, {template, parameters, inputs}]) => {
+    const result = nodeDefinitions.entries().map(([key, { name, template, parameters, inputs }]) => {
       if (inputs.length > 0) {
         return {
+          name,
           key,
           template: undefined,
           parameters: undefined,
@@ -94,7 +97,8 @@ export default function NodesPalette({
       );
 
       return {
-        key: key,
+        key,
+        name, 
         template: templateProcessed,
         parameters: {
           definitions,
@@ -103,7 +107,6 @@ export default function NodesPalette({
       };
     }).toArray();
 
-    console.log(result);
     return result;
   }, []);
 
@@ -115,11 +118,12 @@ export default function NodesPalette({
         border-r border-neutral-700
       `}
     >
-      {data.map(({ key, template, parameters }) => (
+      {data.map(({ key, name, template, parameters }) => (
         <NodeCard
           id={`${key}_palette_card`}
           key={key}
           keyName={key}
+          name={name}
           shaderTemplate={template}
           parameters={parameters}
         />

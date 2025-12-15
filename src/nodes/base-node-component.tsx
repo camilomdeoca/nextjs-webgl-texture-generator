@@ -1,7 +1,14 @@
 import Canvas from "@/components/canvas";
-import { Handle, Position } from "@xyflow/react";
+import { Handle, HandleProps, Position, useNodeConnections } from "@xyflow/react";
 import { ReactNode } from "react";
 import { BaseNodeData } from "./base-node";
+
+function OneConnectionHandle(props: HandleProps) {
+  const connections = useNodeConnections({ handleType: props.type });
+  return (
+    <Handle {...props} isConnectable={connections.length < 1} />
+  );
+}
 
 export type BaseNodeComponentParameters = {
   name: string,
@@ -21,11 +28,10 @@ export function BaseNodeComponent({
 }: BaseNodeComponentParameters) {
   const input_components = inputs.map((input, i) => (
     <div className="relative flex flex-row mr-auto" key={i}>
-      <Handle
+      <OneConnectionHandle
         type="target"
         position={Position.Left}
         onConnect={(params) => console.log('handle onConnect (input)', params)}
-        isConnectable={true}
         id={input.handleId}
       />
       <label
@@ -42,7 +48,6 @@ export function BaseNodeComponent({
       <Handle
         type="source"
         position={Position.Right}
-        onConnect={(params) => console.log('handle onConnect (input)', params)}
         isConnectable={true}
         id={output.name}
       />

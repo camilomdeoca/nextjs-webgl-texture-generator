@@ -23,7 +23,6 @@ import {
   ReactFlowJsonObject,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { eventNames } from "process";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 
 type DroppableProperties = {
@@ -33,7 +32,7 @@ type DroppableProperties = {
 };
 
 function Droppable({ id, className, children }: DroppableProperties) {
-  const { isOver, setNodeRef } = useDroppable({ id });
+  const { setNodeRef } = useDroppable({ id });
   const style = {
     // opacity: isOver ? 0.5 : 1.0,
   };
@@ -209,8 +208,6 @@ export default function Editor() {
         },
         type: "baseNode",
       };
-
-      console.log(node);
 
       addNodes(node);
     }

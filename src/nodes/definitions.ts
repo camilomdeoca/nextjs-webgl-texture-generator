@@ -1,6 +1,7 @@
 import { preprocessTemplate } from "@/glsl-parsing/glsl-templates";
 
 export type NodeDefinition = {
+  name: string,
   template: string,
   parameters: {
     name: string,
@@ -17,6 +18,7 @@ export type NodeDefinition = {
 
 const nodeDefinitions = new Map<string, NodeDefinition>([
   ["invert", {
+    name: "Invert",
     template: preprocessTemplate(`
       vec4 input1;
       vec2 uv1 = $UV;
@@ -32,6 +34,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
     ],
   }],
   ["simplex", {
+    name: "Simplex",
     template: preprocessTemplate(`
       vec3 col = vec3(simplex3d(vec3($UV, $seed) * $scale) * 0.5 + 0.5);
       $OUT = vec4(col, 1.0);

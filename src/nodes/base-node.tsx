@@ -48,13 +48,13 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
   
   const inputDefinitions = (() => {
     const definitions = inputsData.map(({ data }) => data.parameters?.definitions);
-    if (!definitions.every(elem => elem !== undefined)) return [];
+    if (!definitions.every(elem => elem !== undefined)) return undefined;
     return definitions.flat();
   })();
   
   useEffect(() => {
     updateNodeData(id, prev => ({
-      parameters: {
+      parameters: inputDefinitions ? {
         definitions: [
           ...definition.parameters.map(({ name, uniformName, uniformType, inputType }) => ({
             name,
@@ -66,7 +66,7 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
           ...inputDefinitions,
         ],
         values: prev.data.parameters?.values || [],
-      },
+      } : undefined,
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [definition.parameters, id, JSON.stringify(inputDefinitions), updateNodeData]);
@@ -74,6 +74,8 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
   const inputsShaderTemplates = inputsData.map(({ data }) => data.shaderTemplate);
 
   const finalTemplate = useMemo(() => {
+    // If 
+    if (!data.parameters || data.parameters.definitions.length === 0) return undefined;
     if (inputsShaderTemplates.length !== definition.inputs.length) return undefined;
     if (!inputsShaderTemplates.every(elem => elem !== undefined)) return undefined;
 
@@ -90,6 +92,7 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    data.parameters,
     definition.inputs.length,
     definition.parameters,
     definition.template,
@@ -157,7 +160,7 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
 
   return (
     <BaseNodeComponent
-      name="Invert"
+      name={definition.name}
       inputs={definition.inputs}
       outputs={[{ name: "out" }]}
       data={data}

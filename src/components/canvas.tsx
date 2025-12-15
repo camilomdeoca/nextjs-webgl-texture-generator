@@ -149,10 +149,9 @@ function Canvas({
     parameters.definitions.forEach(({ id, uniformName, uniformType }, i) => {
       const location = gl.getUniformLocation(program, `${id}_${uniformName}`);
       if (location === null) {
-        // console.log(shaderTemplate);
-        // console.log(parameters);
-        // console.log(src);
-        throw new Error(`Couldn't get location of uniform: \`${id}_${uniformName}\`.`);
+        // If we are here its because the parameters useEffect updated first
+        // and then before the finalTemplate updated the canvas updated
+        return;
       }
 
       const value = parameters.values[i];
