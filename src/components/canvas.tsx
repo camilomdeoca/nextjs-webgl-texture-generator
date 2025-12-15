@@ -150,11 +150,9 @@ function Canvas({
       const location = gl.getUniformLocation(program, `${id}_${uniformName}`);
       if (location === null) {
         // console.log(shaderTemplate);
-        // console.log(uniformNames);
-        // console.log(uniformValues);
+        // console.log(parameters);
         // console.log(src);
-        // console.error(gl.getError().toString(16));
-        throw new Error(`Couldn't get location of uniform: \`${id}_${uniformName}.\``);
+        throw new Error(`Couldn't get location of uniform: \`${id}_${uniformName}\`.`);
       }
 
       const value = parameters.values[i];

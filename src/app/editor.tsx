@@ -3,6 +3,9 @@
 import Menubar from "@/components/menubar";
 import NodesPalette from "@/components/nodes-palette";
 import BaseNode, { type BaseNode as BaseNodeType } from "@/nodes/base-node";
+import { nodeDefinitions } from "@/nodes/definitions";
+import { initialEdges, initialNodes } from "@/nodes/initial-flow";
+import { DndContext, DragEndEvent, useDroppable } from "@dnd-kit/core";
 import {
   ReactFlow,
   Background,
@@ -20,51 +23,32 @@ import {
   ReactFlowJsonObject,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useEffect, useState } from "react";
+import { eventNames } from "process";
+import { ReactNode, useCallback, useEffect, useState } from "react";
+
+type DroppableProperties = {
+  id: string;
+  className?: string;
+  children?: ReactNode;
+};
+
+function Droppable({ id, className, children }: DroppableProperties) {
+  const { isOver, setNodeRef } = useDroppable({ id });
+  const style = {
+    // opacity: isOver ? 0.5 : 1.0,
+  };
+  
+  return (
+    <div className={className} ref={setNodeRef} style={style}>
+      {children}
+    </div>
+  );
+}
+
 
 const nodeTypes = {
   baseNode: BaseNode,
 };
-
-const initialNodes: BaseNodeType[] = [
-  {
-    id: "n1",
-    position: { x: 0, y: 0 },
-    data: {
-      type: "simplex",
-      ownValues: [0, 1],
-    },
-    type: "baseNode",
-  },
-  {
-    id: "n2",
-    position: { x: 200, y: 100 },
-    data: {
-      type: "invert",
-      ownValues: [1],
-    },
-    type: "baseNode",
-  },
-  {
-    id: "n3",
-    position: { x: 400, y: 100 },
-    data: {
-      type: "invert",
-      ownValues: [1],
-    },
-    type: "baseNode",
-  },
-];
-
-const initialEdges: Edge[] = [
-  // {
-  //   id: "n1-n2",
-  //   source: "n1",
-  //   target: "n2",
-  //   sourceHandle: "out",
-  //   targetHandle: "in",
-  // },
-];
 
 const flowKey = 'texture-generator-flow';
 
@@ -102,7 +86,7 @@ export default function Editor() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const { setViewport } = useReactFlow();  
+  const { setViewport, screenToFlowPosition, addNodes } = useReactFlow();  
   const [showDragDestination, setShowDragDestination] = useState(false);
 
   const loadFlowIntoInstance = useCallback((flow: ReactFlowJsonObject) => {
@@ -193,9 +177,48 @@ export default function Editor() {
   //     clearInterval(interval)
   //   })
   // }, [onSave])
+  
+  const handleAddNodeDragEnd = useCallback((event: DragEndEvent) => {
+    if ( event.collisions
+      && event.collisions.length > 0
+      && event.activatorEvent instanceof PointerEvent
+      && event.active.data.current
+      && "nodeTypeKey" in event.active.data.current
+      && typeof event.active.data.current.nodeTypeKey === "string"
+    ) {
+      const flowPosition = screenToFlowPosition({
+        x: event.activatorEvent.clientX + event.delta.x,
+        y: event.activatorEvent.clientY + event.delta.y,
+      });
+
+      const definition = nodeDefinitions.get(event.active.data.current.nodeTypeKey);
+
+      if (!definition) {
+        throw new Error(`invalid node type key: \`${event.active.data.current.nodeTypeKey}\``);
+      }
+
+      const generatedId = "id"+Math.random().toString(16).slice(2);
+      console.log(generatedId)
+
+      const node: BaseNodeType = {
+        id: generatedId,
+        position: flowPosition,
+        data: {
+          type: event.active.data.current.nodeTypeKey,
+          ownValues: definition?.parameters.map(({defaultValue}) => defaultValue),
+        },
+        type: "baseNode",
+      };
+
+      console.log(node);
+
+      addNodes(node);
+    }
+  }, [addNodes, screenToFlowPosition]);
 
   return (
     <div className="w-full h-full flex flex-col">
+      <DndContext onDragEnd={handleAddNodeDragEnd}>
       <Menubar
         className="shadow-md shadow-black z-20"
         menus={[
@@ -212,36 +235,14 @@ export default function Editor() {
       />
       <div className="flex flex-row w-full h-full"  >
         <NodesPalette className="w-50 h-full shadow-md shadow-black z-10" />
-        <div
-          onDragOver={e => {
-            setShowDragDestination(true);
-            e.preventDefault()
-          }}
-          onDragEnter={e => {
-            e.preventDefault();
-            setShowDragDestination(true);
-          }}
-          onDragLeave={e => {
-            e.preventDefault();
-            setShowDragDestination(false);
-          }}
-          onDrop={e => {
-            e.preventDefault();
-            setShowDragDestination(false);
-            const file = e.dataTransfer.files[0];
-            if (!file) return;
-            loadFlowFromFile(file)
-              .then(flow => {
-                if (flow) loadFlowIntoInstance(flow);
-              });
-
-          }}
+        <Droppable
+          id="droppable"
           className="relative flex-1"
         >
           {showDragDestination && (
             <div
               className={`
-                absolute inset-0 bg-neutral-950/50 z-10 pointer-events-none text-9xl
+                absolute inset-0 bg-neutral-950/50 z-20 pointer-events-none text-9xl
                 flex items-center justify-center border-3 border-dashed border-amber-400/50
               `}
             >
@@ -257,12 +258,36 @@ export default function Editor() {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onInit={setRfInstance}
+            onDragOver={e => {
+              setShowDragDestination(true);
+              e.preventDefault()
+            }}
+            onDragEnter={e => {
+              e.preventDefault();
+              setShowDragDestination(true);
+            }}
+            onDragLeave={e => {
+              e.preventDefault();
+              setShowDragDestination(false);
+            }}
+            onDrop={e => {
+              e.preventDefault();
+              setShowDragDestination(false);
+              const file = e.dataTransfer.files[0];
+              if (!file) return;
+              loadFlowFromFile(file)
+                .then(flow => {
+                  if (flow) loadFlowIntoInstance(flow);
+                });
+
+            }}
           >
             <Background />
             <Controls />
           </ReactFlow>
-        </div>
+        </Droppable>
       </div>
+      </DndContext>
     </div>
   );
 }

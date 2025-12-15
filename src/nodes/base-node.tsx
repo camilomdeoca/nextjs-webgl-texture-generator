@@ -45,6 +45,31 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
   }, []) || [];
 
   const inputsData = useNodesData<BaseNode>(inputNodesIds);
+  
+  const inputDefinitions = (() => {
+    const definitions = inputsData.map(({ data }) => data.parameters?.definitions);
+    if (!definitions.every(elem => elem !== undefined)) return [];
+    return definitions.flat();
+  })();
+  
+  useEffect(() => {
+    updateNodeData(id, prev => ({
+      parameters: {
+        definitions: [
+          ...definition.parameters.map(({ name, uniformName, uniformType, inputType }) => ({
+            name,
+            id,
+            uniformName,
+            uniformType,
+            inputType,
+          })),
+          ...inputDefinitions,
+        ],
+        values: prev.data.parameters?.values || [],
+      },
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [definition.parameters, id, JSON.stringify(inputDefinitions), updateNodeData]);
 
   const inputsShaderTemplates = inputsData.map(({ data }) => data.shaderTemplate);
 
@@ -76,31 +101,6 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
   useEffect(() => {
     updateNodeData(id, { shaderTemplate: finalTemplate });
   }, [id, updateNodeData, finalTemplate]);
-  
-  const inputDefinitions = (() => {
-    const definitions = inputsData.map(({ data }) => data.parameters?.definitions);
-    if (!definitions.every(elem => elem !== undefined)) return [];
-    return definitions.flat();
-  })();
-  
-  useEffect(() => {
-    updateNodeData(id, prev => ({
-      parameters: {
-        definitions: [
-          ...definition.parameters.map(({ name, uniformName, uniformType, inputType }) => ({
-            name,
-            id,
-            uniformName,
-            uniformType,
-            inputType,
-          })),
-          ...inputDefinitions,
-        ],
-        values: prev.data.parameters?.values || [],
-      },
-    }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [definition.parameters, id, JSON.stringify(inputDefinitions), updateNodeData]);
 
   useEffect(() => {
     updateNodeData(id, prev => ({
