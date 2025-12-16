@@ -4,17 +4,19 @@ import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { insertTemplateIntoInputCalls, prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";
 import { nodeDefinitions } from "./definitions";
 
+type BaseNodeParameterDefinition = {
+  name: string,
+  id: string,
+  uniformName: string,
+  uniformType: string,
+  inputType: string,
+};
+
 export type BaseNodeData = {
   type: string,
   shaderTemplate?: string,
   parameters?: {
-    definitions: {
-      name: string,
-      id: string,
-      uniformName: string,
-      uniformType: string,
-      inputType: string,
-    }[],
+    definitions: BaseNodeParameterDefinition[],
     values: unknown[],
   },
   ownValues: unknown[],
@@ -25,57 +27,80 @@ export type BaseNode = Node<BaseNodeData>;
 function BaseNode({ id, data }: NodeProps<BaseNode>) {
   const { updateNodeData } = useReactFlow<BaseNode>();
 
-  const unorderedConnections = useNodeConnections({
-    handleType: "target",
-    // handleId: "in",
-  });
+  const connections = useNodeConnections({ handleType: "target" });
+  const definition = nodeDefinitions.get(data.type);
+  if (!definition) throw new Error("Invalid");
 
-  const type = data.type;
-  const definition = nodeDefinitions.get(type);
+  const inputNodeIds = useMemo(() => connections.map(c => c.source), [connections]);
+  const inputNodes = useNodesData<BaseNode>(inputNodeIds);
 
-  if (!definition) {
-    throw new Error("Invalid")
-  }
+  // Compute parameter definitions of input nodes in a stable way
+  // to prevent re creating the shaders when a value changes
+  // This is really ugly
+  const [prevInputDefinitions, setPrevInputDefinitions]
+    = useState<BaseNodeParameterDefinition[] | undefined>(undefined);
+  const inputParameterDefinitions = useMemo(() => {
+    if (inputNodes.length !== definition.inputs.length) return undefined;
+    if (inputNodes.some(n => n.data.parameters === undefined)) return undefined;
+    const allDefs = inputNodes.map(n => n.data.parameters!.definitions).flat();
 
-  // FIXME: This is O(n^2)
-  const inputNodesIds = definition.inputs.reduce<string[] | null>((acc, { handleId }) => {
-    if (acc === null) return null;
-    const id = unorderedConnections.find(conn => conn.targetHandle == handleId)?.source;
-    return id ? [...acc, id] : null;
-  }, []) || [];
+    // Return the previous inputParameterDefinitions if possible so the reference
+    // is stable and it doesnt rerender.
+    if (prevInputDefinitions && allDefs.every((def, i) => def === prevInputDefinitions![i])
+    ) {
+      return prevInputDefinitions;
+    }
 
-  const inputsData = useNodesData<BaseNode>(inputNodesIds);
-  
-  const inputDefinitions = (() => {
-    const definitions = inputsData.map(({ data }) => data.parameters?.definitions);
-    if (!definitions.every(elem => elem !== undefined)) return undefined;
-    return definitions.flat();
-  })();
+    return allDefs;
+  }, [definition.inputs.length, inputNodes, prevInputDefinitions]);
+
+  if (inputParameterDefinitions != prevInputDefinitions)
+    setPrevInputDefinitions(inputParameterDefinitions);
+
+  const ownParameterDefinitions = useMemo(() => {
+    return definition.parameters.map(({ name, uniformName, uniformType, inputType }) => ({
+      name,
+      id,
+      uniformName,
+      uniformType,
+      inputType,
+    }));
+  }, [definition.parameters, id]);
   
   useEffect(() => {
     updateNodeData(id, prev => ({
-      parameters: inputDefinitions ? {
+      parameters: inputParameterDefinitions ? {
         definitions: [
-          ...definition.parameters.map(({ name, uniformName, uniformType, inputType }) => ({
-            name,
-            id,
-            uniformName,
-            uniformType,
-            inputType,
-          })),
-          ...inputDefinitions,
+          ...ownParameterDefinitions,
+          ...inputParameterDefinitions,
         ],
         values: prev.data.parameters?.values || [],
       } : undefined,
     }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [definition.parameters, id, JSON.stringify(inputDefinitions), updateNodeData]);
+  }, [definition.parameters, id, inputParameterDefinitions, ownParameterDefinitions, updateNodeData]);
 
-  const inputsShaderTemplates = inputsData.map(({ data }) => data.shaderTemplate);
+  const [prevInputShaderTemplates, setPrevInputShaderTemplates] = useState<string[] | undefined>(undefined);
+  const inputShaderTemplates = useMemo(() => {
+    if (inputNodes.length !== definition.inputs.length) return undefined;
+    if (inputNodes.some(n => n.data.shaderTemplate === undefined)) return undefined;
+    const allTemplates = inputNodes.map(n => n.data.shaderTemplate!);
+
+    // Return the previous templates array if possible so the reference
+    // is stable and it doesnt rerender.
+    if (prevInputShaderTemplates && allTemplates.every((def, i) => def === prevInputShaderTemplates[i])
+    ) {
+      return prevInputShaderTemplates;
+    }
+    return inputNodes.map(n => n.data.shaderTemplate!);
+  }, [definition.inputs.length, inputNodes, prevInputShaderTemplates]);
+  if (inputShaderTemplates != prevInputShaderTemplates)
+    setPrevInputShaderTemplates(inputShaderTemplates);
 
   const finalTemplate = useMemo(() => {
-    if (inputsShaderTemplates.length !== definition.inputs.length) return undefined;
-    if (!inputsShaderTemplates.every(elem => elem !== undefined)) return undefined;
+    console.log("RECONSTRUCTED SHADER");
+    if (!inputShaderTemplates) return undefined;
+    // if (inputShaderTemplates.length !== definition.inputs.length) return undefined;
+    // if (!inputShaderTemplates.every(elem => elem !== undefined)) return undefined;
 
     const templateWithUniformsPrepended = prependUniformVariablesWithId(
       id,
@@ -86,17 +111,9 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
     return insertTemplateIntoInputCalls(
       id,
       templateWithUniformsPrepended,
-      inputsShaderTemplates,
+      inputShaderTemplates,
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    definition.inputs.length,
-    definition.parameters,
-    definition.template,
-    id,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    JSON.stringify(inputsShaderTemplates),
-  ]);
+  }, [definition.parameters, definition.template, id, inputShaderTemplates]);
   
   useEffect(() => {
     updateNodeData(id, { shaderTemplate: finalTemplate });
@@ -108,11 +125,11 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
         definitions: prev.data.parameters?.definitions || [],
         values: [
           ...prev.data.ownValues,
-          ...inputsData.flatMap(({ data }) => data.parameters?.values || []),
+          ...inputNodes.flatMap(({ data }) => data.parameters?.values || []),
         ],
       },
     }));
-  }, [id, updateNodeData, inputsData]);
+  }, [id, updateNodeData, inputNodes]);
 
   const [ownValues, setOwnValues] = useState(data.ownValues);
 
