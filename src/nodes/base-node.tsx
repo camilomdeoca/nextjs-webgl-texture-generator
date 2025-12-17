@@ -4,7 +4,9 @@ import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { insertTemplateIntoInputCalls, prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";
 import { nodeDefinitions } from "./definitions";
 
-type BaseNodeParameterDefinition = {
+export type BaseNodeParameterValue = number;
+
+export type BaseNodeParameterDefinition = {
   name: string,
   id: string,
   uniformName: string,
@@ -12,14 +14,16 @@ type BaseNodeParameterDefinition = {
   inputType: string,
 };
 
+export type BaseNodeParameters = {
+  definitions: BaseNodeParameterDefinition[],
+  values: BaseNodeParameterValue[],
+};
+
 export type BaseNodeData = {
   type: string,
   shaderTemplate?: string,
-  parameters?: {
-    definitions: BaseNodeParameterDefinition[],
-    values: unknown[],
-  },
-  ownValues: unknown[],
+  parameters?: BaseNodeParameters,
+  ownValues: BaseNodeParameterValue[],
 };
 
 export type BaseNode = Node<BaseNodeData>;
@@ -166,7 +170,7 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
               };
             });
           }}
-          value={ownValues[i] as number} // TODO: Do something better (might not be a number)
+          value={ownValues[i]} // TODO: Do something better (might not be a number)
         />
       </div>
     );

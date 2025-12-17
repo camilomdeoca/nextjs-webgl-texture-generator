@@ -1,3 +1,5 @@
+"use client";
+
 import { nodeDefinitions } from "@/nodes/definitions";
 import { useMemo } from "react";
 import { prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";

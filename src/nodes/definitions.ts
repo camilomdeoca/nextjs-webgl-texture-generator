@@ -1,4 +1,5 @@
 import { preprocessTemplate } from "@/glsl-parsing/glsl-templates";
+import { BaseNodeParameterValue } from "./base-node";
 
 export type NodeDefinition = {
   name: string,
@@ -8,7 +9,7 @@ export type NodeDefinition = {
     uniformName: string,
     uniformType: string,
     inputType: string,
-    defaultValue: unknown,
+    defaultValue: BaseNodeParameterValue,
   }[],
   inputs: {
     name: string,

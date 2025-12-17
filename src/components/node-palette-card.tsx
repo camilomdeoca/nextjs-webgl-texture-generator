@@ -1,3 +1,5 @@
+"use client";
+
 import { useDraggable } from "@dnd-kit/core";
 import Canvas from "./canvas";
 import {CSS} from '@dnd-kit/utilities';
