@@ -1,8 +1,9 @@
-import { NodeProps, useNodeConnections, useNodesData, useReactFlow, Node } from "@xyflow/react";
+import { NodeProps, useNodeConnections, useNodesData, Node } from "@xyflow/react";
 import { BaseNodeComponent } from "./base-node-component";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { insertTemplateIntoInputCalls, prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";
 import { nodeDefinitions } from "./definitions";
+import useStore from "./store";
 
 export type BaseNodeParameterValue = number;
 
@@ -29,7 +30,7 @@ export type BaseNodeData = {
 export type BaseNode = Node<BaseNodeData>;
 
 function BaseNode({ id, data }: NodeProps<BaseNode>) {
-  const { updateNodeData } = useReactFlow<BaseNode>();
+  const updateNodeData = useStore(state => state.updateNodeData);
 
   const connections = useNodeConnections({ handleType: "target" });
   const definition = nodeDefinitions.get(data.type);

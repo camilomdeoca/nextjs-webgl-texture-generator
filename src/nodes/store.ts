@@ -11,7 +11,7 @@ import {
   ReactFlowInstance,
   OnInit,
 } from '@xyflow/react';
-import { BaseNodeParameters, BaseNodeParameterValue, type BaseNode } from './base-node';
+import { BaseNodeData, BaseNodeParameters, BaseNodeParameterValue, type BaseNode } from './base-node';
 import { DragEndEvent } from '@dnd-kit/core';
 import { nodeDefinitions } from './definitions';
 
@@ -36,13 +36,17 @@ type Actions = {
   onInit: OnInit<BaseNode>;
 
   setNodes: (nodes: BaseNode[]) => void;
-  setEdges: (edges: Edge[]) => void;
   addNodes: (nodes: BaseNode[]) => void;
-  
+  updateNodeData: (
+    id: string,
+    partialNodeData: Partial<BaseNodeData> | ((prev: BaseNode) => Partial<BaseNodeData>),
+  ) => void;
+  setEdges: (edges: Edge[]) => void;
+
   setNodeParameters: (nodeId: string, parameters: BaseNodeParameters) => void;
   setNodeValues: (nodeId: string, values: BaseNodeParameterValue[]) => void;
   setNodeTemplate: (nodeId: string, template?: string) => void;
- 
+
   loadSerializableState: (serializableState: SerializableState) => void,
   save: () => void;
   load: () => void;
@@ -125,11 +129,28 @@ const useStore = create<State & Actions>((set, get) => ({
   setNodes: (nodes) => {
     set({ nodes });
   },
+  addNodes: (nodes: BaseNode[]) => {
+    set({ nodes: [...get().nodes, ...nodes] });
+  },
+  updateNodeData: (id, nodeDataUpdate) => {
+    set({
+      nodes: get().nodes.map(node => {
+        if (node.id == id) {
+          const newData = typeof nodeDataUpdate === "function" ? nodeDataUpdate(node) : nodeDataUpdate;
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              ...newData,
+            },
+          };
+        }
+        return node;
+      }),
+    });
+  },
   setEdges: (edges) => {
     set({ edges });
-  },
-  addNodes: (nodes: BaseNode[]) => {
-    set({ nodes: [...get().nodes, ...nodes] })
   },
 
   setNodeValues: (nodeId, values) => {
@@ -255,6 +276,7 @@ const useStore = create<State & Actions>((set, get) => ({
     input.click();
   },
   handleAddNodeDragEnd: (event: DragEndEvent) => {
+    console.log("START ADD NODE");
     if ( event.collisions
       && event.collisions.length > 0
       && event.activatorEvent instanceof PointerEvent
@@ -263,7 +285,10 @@ const useStore = create<State & Actions>((set, get) => ({
       && typeof event.active.data.current.nodeTypeKey === "string"
     ) {
       const rfInstance = get().rfInstance;
-      if (!rfInstance) return;
+      if (!rfInstance) {
+        console.warn("Null React Flow instance.");
+        return;
+      }
       const flowPosition = rfInstance.screenToFlowPosition({
         x: event.activatorEvent.clientX + event.delta.x,
         y: event.activatorEvent.clientY + event.delta.y,
@@ -276,7 +301,6 @@ const useStore = create<State & Actions>((set, get) => ({
       }
 
       const generatedId = "id"+Math.random().toString(16).slice(2);
-      console.log(generatedId)
 
       const node: BaseNode = {
         id: generatedId,
@@ -289,6 +313,8 @@ const useStore = create<State & Actions>((set, get) => ({
       };
 
       get().addNodes([node]);
+    } else {
+      console.warn("ERROR: adding node", event);
     }
   },
 }));
