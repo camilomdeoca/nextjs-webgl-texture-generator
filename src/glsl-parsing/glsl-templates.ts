@@ -65,3 +65,22 @@ export function preprocessTemplate(template: string): string {
     .replace(/^\s*\n/, "\n")
     .replace(/\n\s+$/, "\n");
 }
+
+export function buildFinalTemplate(
+  id: string,
+  template: string,
+  uniformNames: string[],
+  inputTemplates: string[],
+) {
+  const templateWithUniformsPrepended = prependUniformVariablesWithId(
+    id,
+    template,
+    uniformNames,
+  );
+
+  return insertTemplateIntoInputCalls(
+    id,
+    templateWithUniformsPrepended,
+    inputTemplates,
+  );
+}

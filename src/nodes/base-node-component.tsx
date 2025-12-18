@@ -1,8 +1,10 @@
 import Canvas from "@/components/canvas";
 import { Handle, Position } from "@xyflow/react";
 import { ReactNode } from "react";
-import { BaseNodeData } from "./base-node";
 import { OneConnectionHandle } from "./one-connection-handle";
+import useStore from "./store";
+import { useShallow } from "zustand/shallow";
+import { nodeDefinitions } from "./definitions";
 
 export type BaseNodeComponentParameters = {
   name: string,
@@ -10,7 +12,7 @@ export type BaseNodeComponentParameters = {
   inputs: { name: string, handleId: string }[],
   outputs: { name: string }[],
   children?: ReactNode,
-  data: BaseNodeData,
+  id: string,
 };
 
 export function BaseNodeComponent({
@@ -18,7 +20,7 @@ export function BaseNodeComponent({
   inputs,
   outputs,
   children,
-  data,
+  id,
 }: BaseNodeComponentParameters) {
   const input_components = inputs.map((input, i) => (
     <div className="relative flex flex-row mr-auto" key={i}>
@@ -53,6 +55,26 @@ export function BaseNodeComponent({
       </label>
     </div>
   ));
+  
+  const template = useStore(state => state.templates.get(id));
+  const parameters = useStore(useShallow(state => state.parameters.get(id)));
+  // if (!parameters) throw new Error(`Node ${id} doesn't have parameters in store.`);
+  const values = useStore(useShallow(state => state.values.get(id)));
+  // if (!values) throw new Error(`Node ${id} doesn't have values in store.`);
+  
+  const type = useStore(state => state.types.get(id));
+  if (!type) throw new Error(`Node ${id} isn't in store.`);
+
+  const definition = nodeDefinitions.get(type);
+  if (!definition) throw new Error(`Invalid type: ${type}`);
+  
+  const shouldRender = useStore(useShallow(state => {
+    const inputEdges = state.edges.filter(edge => edge.target === id);
+    return definition.inputs.every(input => {
+      return inputEdges.find(edge => edge.targetHandle == input.handleId)?.target === id;
+    });
+  }));
+  // const shouldRender = true;
 
   return (
     <div className="w-48">
@@ -64,8 +86,9 @@ export function BaseNodeComponent({
       </div>
       <div className="p-2.5">
         <Canvas
-          shaderTemplate={data.shaderTemplate}
-          parameters={data.parameters}
+          shaderTemplate={shouldRender ? template : undefined}
+          parameters={shouldRender ? parameters : undefined}
+          values={values}
         />
       </div>
       <div className="flex flex-row pb-2.5">

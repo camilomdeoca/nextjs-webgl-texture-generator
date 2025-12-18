@@ -75,9 +75,9 @@ export default function Editor() {
 
   const [showDragDestination, setShowDragDestination] = useState(false);
 
-  useEffect(() => {
-    (async () => load())();
-  }, [load]);
+  // useEffect(() => {
+  //   (async () => load())();
+  // }, [load]);
 
   // TODO: make auto-saving toggleable
   // useEffect(() => {

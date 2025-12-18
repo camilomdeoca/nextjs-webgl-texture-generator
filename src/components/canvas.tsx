@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import glslUtils from "@/shaders/utils.glsl";
+import { BaseNodeParameterDefinition, BaseNodeParameterValue } from "@/nodes/store";
 
 const vsSrc = `#version 300 es
 precision highp float;
@@ -74,45 +75,32 @@ function Canvas({
   className,
   shaderTemplate,
   parameters,
+  values,
 }: {
   className?: string,
   shaderTemplate?: string,
-  parameters?: {
-    definitions: {
-      name: string,
-      id: string,
-      uniformName: string,
-      uniformType: string,
-      inputType: string,
-    }[],
-    values: unknown[],
-  },
+  parameters?: BaseNodeParameterDefinition[],
+  values?: BaseNodeParameterValue[],
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [program, setProgram] = useState<WebGLProgram | null>(null);
   const [src, setSrc] = useState<string | null>(null);
 
-  const parameterDefinitions = parameters?.definitions;
-
   // Reconstruct shader when connected nodes change
   useEffect(() => {
-    console.log("RECONSTRUCT SHADER");
+    console.log("RECONSTRUCT SHADER" /*, shaderTemplate, parameters*/);
     const canvas = canvasRef.current;
     if (canvas === null) throw new Error("Couldn't get canvas reference.");
     const gl = canvas.getContext('webgl2');
     if (gl === null) throw new Error("Couldn't get webgl context.");
 
-    if (shaderTemplate === undefined || parameterDefinitions === undefined) {
+    if (shaderTemplate === undefined || parameters === undefined) {
       return;
     }
 
-    // console.log(parameterDefinitions);
-
-    const uniformsSrc = parameterDefinitions.map(({ id, uniformName, uniformType }) => {
+    const uniformsSrc = parameters.map(({ id, uniformName, uniformType }) => {
       return `uniform ${uniformType} ${id}_${uniformName};`;
     }).join("\n")
-
-    // console.log(uniformsSrc);
 
     const finalFsSrc = fsSrc
       .replace(
@@ -128,17 +116,17 @@ function Canvas({
 
     setProgram(() => createProgram(gl, vsSrc, finalFsSrc));
     setSrc(() => finalFsSrc);
-  }, [shaderTemplate, parameterDefinitions]);
+  }, [shaderTemplate, parameters]);
 
   useEffect(() => {
-    console.log("RE-RENDER");
+    console.log("RE-RENDER"/*, program, shaderTemplate, parameters, values*/);
     const canvas = canvasRef.current;
     if (canvas === null) throw new Error("Couldn't get canvas reference.");
     const gl = canvas.getContext('webgl2');
     if (gl === null) throw new Error("Couldn't get webgl context.");
 
     // Clear the canvas if a node gets disconected or something
-    if (program === null || shaderTemplate === undefined || parameters === undefined) {
+    if (program === null || shaderTemplate === undefined || parameters === undefined || values === undefined) {
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       return;
@@ -146,7 +134,7 @@ function Canvas({
 
     gl.useProgram(program);
 
-    parameters.definitions.forEach(({ id, uniformName, uniformType }, i) => {
+    parameters.forEach(({ id, uniformName, uniformType }, i) => {
       const location = gl.getUniformLocation(program, `${id}_${uniformName}`);
       if (location === null) {
         // If we are here its because the parameters useEffect updated first
@@ -154,7 +142,7 @@ function Canvas({
         return;
       }
 
-      const value = parameters.values[i];
+      const value = values[i];
       switch (uniformType) {
         case "float":
           if (typeof value !== 'number') {
@@ -173,7 +161,7 @@ function Canvas({
 
     gl.viewport(0, 0, previewSize, previewSize);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }, [shaderTemplate, parameters, program, src]);
+  }, [shaderTemplate, parameters, program, src, values]);
 
   return (
     <canvas

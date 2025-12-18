@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ReactFlowProvider,
 } from "@xyflow/react";

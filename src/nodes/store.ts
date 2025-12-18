@@ -11,9 +11,25 @@ import {
   ReactFlowInstance,
   OnInit,
 } from '@xyflow/react';
-import { BaseNodeData, BaseNodeParameters, BaseNodeParameterValue, type BaseNode } from './base-node';
+import { BaseNodeData, type BaseNode } from './base-node';
 import { DragEndEvent } from '@dnd-kit/core';
 import { nodeDefinitions } from './definitions';
+import { buildFinalTemplate } from '@/glsl-parsing/glsl-templates';
+
+export type BaseNodeParameterValue = number;
+
+export type BaseNodeParameterDefinition = {
+  name: string,
+  id: string,
+  uniformName: string,
+  uniformType: string,
+  inputType: string,
+};
+
+export type BaseNodeParameters = {
+  definitions: BaseNodeParameterDefinition[],
+  values: BaseNodeParameterValue[],
+};
 
 type SerializableState = {
   nodes: BaseNode[];
@@ -26,13 +42,25 @@ type State = {
   edges: Edge[];
   viewport: Viewport;
   rfInstance: ReactFlowInstance<BaseNode> | null;
+
+  parameters: Map<string, BaseNodeParameterDefinition[]>;
+  values: Map<string, BaseNodeParameterValue[]>;
+  ownValues: Map<string, BaseNodeParameterValue[]>;
+  templates: Map<string, string>;
+  types: Map<string, string>;
 };
 
 type Actions = {
+  updateTemplatesFromNode: (id: string) => void;
+  updateParametersFromNode: (id: string) => void;
+  updateValuesFromNode: (id: string) => void;
+  setNodeValue: (id: string, paramIdx: number, value: BaseNodeParameterValue) => void;
+
+  onConnect: OnConnect;
+
   onNodesChange: OnNodesChange<BaseNode>;
   onEdgesChange: OnEdgesChange;
   onViewportChange: (viewport: Viewport) => void;
-  onConnect: OnConnect;
   onInit: OnInit<BaseNode>;
 
   setNodes: (nodes: BaseNode[]) => void;
@@ -42,10 +70,6 @@ type Actions = {
     partialNodeData: Partial<BaseNodeData> | ((prev: BaseNode) => Partial<BaseNodeData>),
   ) => void;
   setEdges: (edges: Edge[]) => void;
-
-  setNodeParameters: (nodeId: string, parameters: BaseNodeParameters) => void;
-  setNodeValues: (nodeId: string, values: BaseNodeParameterValue[]) => void;
-  setNodeTemplate: (nodeId: string, template?: string) => void;
 
   loadSerializableState: (serializableState: SerializableState) => void,
   save: () => void;
@@ -82,13 +106,13 @@ export async function loadSerializableStateFromFile(file: File): Promise<Seriali
   if (!file) return;
   const text = await file.text();
   const flow = JSON.parse(text);
-  
+
   if (isSerializableState(flow)) return flow;
   else return undefined;
 }
 
 
-export function getNodeConnectedToHandle (state: State & Actions, nodeId: string, handleId: string) {
+export function getNodeConnectedToHandle(state: State & Actions, nodeId: string, handleId: string) {
   return state.nodes.find(n => {
     const sourceId = state.edges.find(e =>
       e.target === nodeId && e.targetHandle === handleId
@@ -101,12 +125,188 @@ export function getNodesData(state: State & Actions, nodeIds: string[]): (BaseNo
   return nodeIds.map(id => state.nodes.find(node => node.id == id)?.data);
 }
 
+function allDefined<T>(arr: (T | undefined)[]): arr is T[] {
+  return arr.every(v => v !== undefined);
+}
+
+function assertAllDefined<T>(
+  arr: (T | undefined)[],
+  msg: string = "Array contains undefined",
+): asserts arr is T[] {
+  if (arr.some(v => v === undefined)) {
+    throw new Error(msg);
+  }
+}
+
 // this is our useStore hook that we can use in our components to get parts of the store and call actions
 const useStore = create<State & Actions>((set, get) => ({
   nodes: [],
   edges: [],
   viewport: { x: 0, y: 0, zoom: 1 },
   rfInstance: null,
+
+  parameters: new Map(),
+  values: new Map(),
+  ownValues: new Map(),
+  templates: new Map(),
+  types: new Map(),
+
+  updateTemplatesFromNode: (id) => {
+    const type = get().types.get(id);
+    if (!type) throw new Error(`Node: ${id} has no type.`);
+
+    const definition = nodeDefinitions.get(type);
+    if (!definition) throw new Error(`Invalid node type: ${type}.`);
+
+    // TODO: have the incomming and outgoing nodes in two maps to make this lookup faster
+    const inputEdges = get().edges.filter(edge => edge.target === id);
+    
+    const inputNodeIds = definition.inputs.map(input => {
+      return inputEdges.find(edge => edge.targetHandle == input.handleId)?.source;
+    });
+    if (!allDefined(inputNodeIds)) return; // Some input is not connected for node
+
+    const inputTemplates = inputNodeIds.map(id => {
+      return get().templates.get(id);
+    });
+    assertAllDefined(inputTemplates, `Input node for ${id} doesn't have a template`);
+
+    const finalTemplate = buildFinalTemplate(
+      id,
+      definition.template,
+      definition.parameters.map(p => p.uniformName),
+      inputTemplates,
+    );
+
+    const newTemplates = new Map(get().templates.entries());
+    newTemplates.set(id, finalTemplate);
+
+    set({ templates: newTemplates });
+
+    // trigger nodes that have this one as input
+    const outputNodeIds = get().edges
+      .filter(edge => edge.source === id)
+      .map(e => e.target);
+    for (const id of outputNodeIds) {
+      get().updateTemplatesFromNode(id);
+    }
+  },
+  updateParametersFromNode: (id: string) => {
+    const type = get().types.get(id);
+    if (!type) throw new Error(`Node: ${id} has no type.`);
+
+    const definition = nodeDefinitions.get(type);
+    if (!definition) throw new Error(`Invalid node type: ${type}.`);
+
+    // TODO: have the incomming and outgoing nodes in two maps to make this lookup faster
+    const inputEdges = get().edges.filter(edge => edge.target === id);
+
+    const inputNodeIds = definition.inputs.map(input => {
+      return inputEdges.find(edge => edge.targetHandle == input.handleId)?.source;
+    });
+    if (!allDefined(inputNodeIds)) return; // Some input is not connected
+
+    const inputsParameters = inputNodeIds.map(id => {
+      return get().parameters.get(id);
+    });
+    assertAllDefined(inputsParameters, `Some input doesn't have parameters for node ${id}.`);
+
+    const ownParameters: BaseNodeParameterDefinition[] = definition.parameters.map(param => {
+      return {
+        name: param.name,
+        id: id,
+        uniformName: param.uniformName,
+        uniformType: param.uniformType,
+        inputType: param.inputType,
+      };
+    });
+
+    const newParameters = new Map(get().parameters.entries());
+    newParameters.set(
+      id,
+      [
+        ...ownParameters,
+        ...inputsParameters.flat(),
+      ],
+    );
+
+    set({ parameters: newParameters });
+
+    // trigger nodes that have this one as input
+    const outputNodeIds = get().edges
+      .filter(edge => edge.source === id)
+      .map(e => e.target);
+    for (const id of outputNodeIds) {
+      get().updateParametersFromNode(id);
+    }
+  },
+  updateValuesFromNode: (id: string) => {
+    const type = get().types.get(id);
+    if (!type) throw new Error(`Node: ${id} has no type.`);
+
+    const definition = nodeDefinitions.get(type);
+    if (!definition) throw new Error(`Invalid node type: ${type}.`);
+
+    // TODO: have the incomming and outgoing nodes in two maps to make this lookup faster
+    const inputEdges = get().edges.filter(edge => edge.target === id);
+
+    const inputNodeIds = definition.inputs.map(input => {
+      return inputEdges.find(edge => edge.targetHandle == input.handleId)?.source;
+    });
+    if (!allDefined(inputNodeIds)) return; // Some input is not connected
+
+    const inputsValues = inputNodeIds.map(id => {
+      return get().values.get(id);
+    });
+    assertAllDefined(inputsValues, `Some input doesn't have values for node ${id}.`);
+
+    const ownValues = get().ownValues.get(id);
+    if (!ownValues) throw new Error(`Node ${id} doesn't have own values.`);
+
+    const newValues = new Map(get().values.entries());
+    newValues.set(
+      id,
+      [
+        ...ownValues,
+        ...inputsValues.flat(),
+      ],
+    );
+
+    set({ values: newValues });
+
+    // trigger nodes that have this one as input
+    const outputNodeIds = get().edges
+      .filter(edge => edge.source === id)
+      .map(e => e.target);
+    for (const id of outputNodeIds) {
+      get().updateValuesFromNode(id);
+    }
+  },
+
+  setNodeValue: (id: string, paramIdx: number, value: BaseNodeParameterValue) => {
+    const prevOwnValues = get().ownValues.get(id);
+    if (!prevOwnValues) throw new Error(`Node ${id} doesn't have own values.`);
+
+    const newOwnValues = new Map(get().ownValues.entries());
+    
+    const newOwnValuesForThisNode = [...prevOwnValues];
+    newOwnValuesForThisNode[paramIdx] = value;
+    newOwnValues.set(id, newOwnValuesForThisNode);
+
+    set({ ownValues: newOwnValues });
+
+    get().updateValuesFromNode(id);
+  },
+  
+  onConnect: (connection) => {
+    set({
+      edges: addEdge(connection, get().edges),
+    });
+
+    get().updateParametersFromNode(connection.target);
+    get().updateValuesFromNode(connection.target);
+    get().updateTemplatesFromNode(connection.target);
+  },
 
   onNodesChange: (changes) => {
     set({
@@ -120,11 +320,6 @@ const useStore = create<State & Actions>((set, get) => ({
   },
   onViewportChange: (viewport) => {
     set({ viewport });
-  },
-  onConnect: (connection) => {
-    set({
-      edges: addEdge(connection, get().edges),
-    });
   },
   onInit: (rfInstance) => {
     set({ rfInstance });
@@ -154,71 +349,16 @@ const useStore = create<State & Actions>((set, get) => ({
     });
   },
   setEdges: (edges) => {
-    set({ edges });
-  },
+    // const targettedNodes: State["targettedNodes"] = new Map();
+    // for (const edge of edges) {
+    //   if (!targettedNodes.has(edge.source)) targettedNodes.set(edge.source, []);
+    //   const targettedNodesForThisSource = targettedNodes.get(edge.source)!;
+    //   targettedNodesForThisSource.push(edge.target);
+    // }
 
-  setNodeValues: (nodeId, values) => {
     set({
-      nodes: get().nodes.map((node) => {
-        if (node.id === nodeId) {
-          if (!node.data.parameters) throw new Error("No parameters.");
-          // it's important to create a new object here, to inform React Flow about the changes
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              parameters: {
-                ...node.data.parameters,
-                values: [
-                  ...values,
-                  ...node.data.parameters.values.splice(0, values.length),
-                ],
-              },
-              ownValues: values,
-            },
-          };
-        }
-
-        return node;
-      }),
-    });
-  },
-  setNodeParameters: (nodeId, parameters) => {
-    set({
-      nodes: get().nodes.map((node) => {
-        if (node.id === nodeId) {
-          // if (!node.data.parameters) throw new Error("No parameters.");
-
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              parameters,
-            },
-          };
-        }
-
-        return node;
-      }),
-    });
-  },
-  setNodeTemplate: (nodeId, template) => {
-    set({
-      nodes: get().nodes.map((node) => {
-        if (node.id === nodeId) {
-          // if (!node.data.parameters) throw new Error("No parameters.");
-
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              shaderTemplate: template,
-            },
-          };
-        }
-
-        return node;
-      }),
+      edges,
+      // targettedNodes,
     });
   },
 
@@ -281,7 +421,7 @@ const useStore = create<State & Actions>((set, get) => ({
   },
   handleAddNodeDragEnd: (event: DragEndEvent) => {
     console.log("START ADD NODE");
-    if ( event.collisions
+    if (event.collisions
       && event.collisions.length > 0
       && event.activatorEvent instanceof PointerEvent
       && event.active.data.current
@@ -304,19 +444,34 @@ const useStore = create<State & Actions>((set, get) => ({
         throw new Error(`invalid node type key: \`${event.active.data.current.nodeTypeKey}\``);
       }
 
-      const generatedId = "id"+Math.random().toString(16).slice(2);
+      const generatedId = "id" + Math.random().toString(16).slice(2);
 
       const node: BaseNode = {
         id: generatedId,
         position: flowPosition,
         data: {
-          type: event.active.data.current.nodeTypeKey,
-          ownValues: definition?.parameters.map(({defaultValue}) => defaultValue),
+          ownValues: [],
         },
         type: "baseNode",
       };
 
+      const newOwnValues = new Map(get().ownValues.entries());
+      newOwnValues.set(generatedId, definition.parameters.map(p => p.defaultValue));
+
+      const newTypes = new Map(get().types.entries());
+      newTypes.set(generatedId, event.active.data.current.nodeTypeKey);
+
+      set({
+        ownValues: newOwnValues,
+        types: newTypes,
+      })
+
       get().addNodes([node]);
+
+      get().updateParametersFromNode(generatedId);
+      get().updateValuesFromNode(generatedId);
+      get().updateTemplatesFromNode(generatedId);
+      console.log(get());
     } else {
       console.warn("ERROR: adding node", event);
     }
