@@ -5,7 +5,8 @@ import { nodeDefinitions } from "./definitions";
 import useStore from "./store";
 import { useShallow } from "zustand/shallow";
 
-function BaseNode({ id }: NodeProps) {
+function BaseNode(props: NodeProps) {
+  const id = props.id;
   // console.log("RENDER NODE");
   const type = useStore(state => state.types.get(id));
   if (!type) throw new Error(`Node ${id} isn't in store.`);
@@ -37,10 +38,10 @@ function BaseNode({ id }: NodeProps) {
 
   return (
     <BaseNodeComponent
+      nodeProps={props}
       name={definition.name}
       inputs={definition.inputs}
       outputs={[{ name: "out" }]}
-      id={id}
     >
       {inputs}
     </BaseNodeComponent>

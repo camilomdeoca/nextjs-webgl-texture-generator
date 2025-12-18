@@ -93,7 +93,7 @@ export default function Editor() {
   const dndId = useId();
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col text-neutral-100 bg-red-950">
       <DndContext id={dndId} onDragEnd={handleAddNodeDragEnd}>
       <Menubar
         className="shadow-md shadow-black z-20"
