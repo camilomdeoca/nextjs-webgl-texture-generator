@@ -1,9 +1,11 @@
-import { NodeProps, useNodeConnections, useNodesData, Node } from "@xyflow/react";
+import { NodeProps, useNodeConnections, Node } from "@xyflow/react";
 import { BaseNodeComponent } from "./base-node-component";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, DependencyList, useEffect, useMemo, useRef, useState } from "react";
 import { insertTemplateIntoInputCalls, prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";
 import { nodeDefinitions } from "./definitions";
-import useStore from "./store";
+import useStore, { getNodesData } from "./store";
+import { shallow, useShallow } from "zustand/shallow";
+import { useShallowCompareEffect } from "react-use";
 
 export type BaseNodeParameterValue = number;
 
@@ -27,6 +29,34 @@ export type BaseNodeData = {
   ownValues: BaseNodeParameterValue[],
 };
 
+function useShallowMemo<T>(
+  factory: () => T,
+  deps: DependencyList,
+): T {
+  const ref = useRef<{
+    value: T,
+    deps: readonly unknown[],
+  } | null>(null);
+
+  // eslint-disable-next-line react-hooks/refs
+  if (ref.current) {
+    // eslint-disable-next-line react-hooks/refs
+    const same = deps.length == ref.current.deps.length
+      // eslint-disable-next-line react-hooks/refs
+      && deps.every((dep, i) => shallow(dep, ref.current!.deps[i]));
+
+    if (same) {
+      // eslint-disable-next-line react-hooks/refs
+      return ref.current.value;
+    }
+  }
+
+  const value = factory();
+  // eslint-disable-next-line react-hooks/refs
+  ref.current = { value, deps };
+  return value;
+}
+
 export type BaseNode = Node<BaseNodeData>;
 
 function BaseNode({ id, data }: NodeProps<BaseNode>) {
@@ -37,30 +67,13 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
   if (!definition) throw new Error("Invalid");
 
   const inputNodeIds = useMemo(() => connections.map(c => c.source), [connections]);
-  const inputNodes = useNodesData<BaseNode>(inputNodeIds);
+  const inputNodesData = useStore(useShallow(state => getNodesData(state, inputNodeIds)));
 
-  // Compute parameter definitions of input nodes in a stable way
-  // to prevent re creating the shaders when a value changes
-  // This is really ugly
-  const [prevInputDefinitions, setPrevInputDefinitions]
-    = useState<BaseNodeParameterDefinition[] | undefined>(undefined);
-  const inputParameterDefinitions = useMemo(() => {
-    if (inputNodes.length !== definition.inputs.length) return undefined;
-    if (inputNodes.some(n => n.data.parameters === undefined)) return undefined;
-    const allDefs = inputNodes.map(n => n.data.parameters!.definitions).flat();
-
-    // Return the previous inputParameterDefinitions if possible so the reference
-    // is stable and it doesnt rerender.
-    if (prevInputDefinitions && allDefs.every((def, i) => def === prevInputDefinitions![i])
-    ) {
-      return prevInputDefinitions;
-    }
-
-    return allDefs;
-  }, [definition.inputs.length, inputNodes, prevInputDefinitions]);
-
-  if (inputParameterDefinitions != prevInputDefinitions)
-    setPrevInputDefinitions(inputParameterDefinitions);
+  const inputParameterDefinitions = (() => {
+    if (inputNodesData.length !== definition.inputs.length) return undefined;
+    if (inputNodesData.some(data => data?.parameters === undefined)) return undefined;
+    return inputNodesData.map(data => data!.parameters!.definitions).flat();
+  })();
 
   const ownParameterDefinitions = useMemo(() => {
     return definition.parameters.map(({ name, uniformName, uniformType, inputType }) => ({
@@ -72,7 +85,7 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
     }));
   }, [definition.parameters, id]);
   
-  useEffect(() => {
+  useShallowCompareEffect(() => {
     updateNodeData(id, prev => ({
       parameters: inputParameterDefinitions ? {
         definitions: [
@@ -84,24 +97,13 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
     }));
   }, [definition.parameters, id, inputParameterDefinitions, ownParameterDefinitions, updateNodeData]);
 
-  const [prevInputShaderTemplates, setPrevInputShaderTemplates] = useState<string[] | undefined>(undefined);
-  const inputShaderTemplates = useMemo(() => {
-    if (inputNodes.length !== definition.inputs.length) return undefined;
-    if (inputNodes.some(n => n.data.shaderTemplate === undefined)) return undefined;
-    const allTemplates = inputNodes.map(n => n.data.shaderTemplate!);
+  const inputShaderTemplates = (() => {
+    if (inputNodesData.length !== definition.inputs.length) return undefined;
+    if (inputNodesData.some(data => data?.shaderTemplate === undefined)) return undefined;
+    return inputNodesData.map(data => data!.shaderTemplate!);
+  })();
 
-    // Return the previous templates array if possible so the reference
-    // is stable and it doesnt rerender.
-    if (prevInputShaderTemplates && allTemplates.every((def, i) => def === prevInputShaderTemplates[i])
-    ) {
-      return prevInputShaderTemplates;
-    }
-    return inputNodes.map(n => n.data.shaderTemplate!);
-  }, [definition.inputs.length, inputNodes, prevInputShaderTemplates]);
-  if (inputShaderTemplates != prevInputShaderTemplates)
-    setPrevInputShaderTemplates(inputShaderTemplates);
-
-  const finalTemplate = useMemo(() => {
+  const finalTemplate = useShallowMemo(() => {
     console.log("RECONSTRUCTED SHADER");
     if (!inputShaderTemplates) return undefined;
     // if (inputShaderTemplates.length !== definition.inputs.length) return undefined;
@@ -119,7 +121,7 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
       inputShaderTemplates,
     );
   }, [definition.parameters, definition.template, id, inputShaderTemplates]);
-  
+
   useEffect(() => {
     updateNodeData(id, { shaderTemplate: finalTemplate });
   }, [id, updateNodeData, finalTemplate]);
@@ -130,11 +132,11 @@ function BaseNode({ id, data }: NodeProps<BaseNode>) {
         definitions: prev.data.parameters?.definitions || [],
         values: [
           ...prev.data.ownValues,
-          ...inputNodes.flatMap(({ data }) => data.parameters?.values || []),
+          ...inputNodesData.flatMap(data => data?.parameters?.values || []),
         ],
       },
     }));
-  }, [id, updateNodeData, inputNodes]);
+  }, [id, updateNodeData, inputNodesData]);
 
   const [ownValues, setOwnValues] = useState(data.ownValues);
 

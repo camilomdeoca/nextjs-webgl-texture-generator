@@ -97,6 +97,10 @@ export function getNodeConnectedToHandle (state: State & Actions, nodeId: string
   });
 }
 
+export function getNodesData(state: State & Actions, nodeIds: string[]): (BaseNodeData | undefined)[] {
+  return nodeIds.map(id => state.nodes.find(node => node.id == id)?.data);
+}
+
 // this is our useStore hook that we can use in our components to get parts of the store and call actions
 const useStore = create<State & Actions>((set, get) => ({
   nodes: [],
