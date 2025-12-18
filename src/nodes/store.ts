@@ -35,6 +35,12 @@ type SerializableState = {
   nodes: BaseNode[];
   edges: Edge[];
   viewport: Viewport;
+
+  parameters: [string, BaseNodeParameterDefinition[]][];
+  values: [string, BaseNodeParameterValue[]][];
+  ownValues: [string, BaseNodeParameterValue[]][];
+  templates: [string, string][];
+  types: [string, string][];
 };
 
 type State = {
@@ -81,11 +87,17 @@ type Actions = {
 
 const flowKey = 'texture-generator-flow';
 
-// TODO: check also inside nodes and edges
+// TODO: check also inside array fields
 function isSerializableState(flow: unknown): flow is SerializableState {
   if (typeof flow !== "object" || flow === null) return false;
 
   if (!("nodes" in flow) || !Array.isArray(flow.nodes)) return false;
+  if (!("edges" in flow) || !Array.isArray(flow.edges)) return false;
+  if (!("parameters" in flow) || !Array.isArray(flow.parameters)) return false;
+  if (!("values" in flow) || !Array.isArray(flow.values)) return false;
+  if (!("ownValues" in flow) || !Array.isArray(flow.ownValues)) return false;
+  if (!("templates" in flow) || !Array.isArray(flow.templates)) return false;
+  if (!("types" in flow) || !Array.isArray(flow.types)) return false;
   if (!("edges" in flow) || !Array.isArray(flow.edges)) return false;
   if (!("viewport" in flow) || typeof flow.viewport !== "object" || flow.viewport === null) return false;
   if (!("x" in flow.viewport) || typeof flow.viewport.x !== "number") return false;
@@ -102,6 +114,19 @@ function loadSerializableStateFromLocalStorage(): SerializableState | undefined 
   else return undefined;
 }
 
+function serializableStateFromState(state: State & Actions): SerializableState {
+  return {
+    nodes: state.nodes,
+    edges: state.edges,
+    viewport: state.viewport,
+    parameters: state.parameters.entries().toArray(),
+    values: state.values.entries().toArray(),
+    ownValues: state.ownValues.entries().toArray(),
+    templates: state.templates.entries().toArray(),
+    types: state.types.entries().toArray(),
+  };
+}
+
 export async function loadSerializableStateFromFile(file: File): Promise<SerializableState | undefined> {
   if (!file) return;
   const text = await file.text();
@@ -109,20 +134,6 @@ export async function loadSerializableStateFromFile(file: File): Promise<Seriali
 
   if (isSerializableState(flow)) return flow;
   else return undefined;
-}
-
-
-export function getNodeConnectedToHandle(state: State & Actions, nodeId: string, handleId: string) {
-  return state.nodes.find(n => {
-    const sourceId = state.edges.find(e =>
-      e.target === nodeId && e.targetHandle === handleId
-    )?.source;
-    return n.id === sourceId;
-  });
-}
-
-export function getNodesData(state: State & Actions, nodeIds: string[]): (BaseNodeData | undefined)[] {
-  return nodeIds.map(id => state.nodes.find(node => node.id == id)?.data);
 }
 
 function allDefined<T>(arr: (T | undefined)[]): arr is T[] {
@@ -367,33 +378,26 @@ const useStore = create<State & Actions>((set, get) => ({
       nodes: serializableState.nodes,
       edges: serializableState.edges,
       viewport: serializableState.viewport,
+      parameters: new Map(serializableState.parameters),
+      values: new Map(serializableState.values),
+      ownValues: new Map(serializableState.ownValues),
+      templates: new Map(serializableState.templates),
+      types: new Map(serializableState.types),
     });
   },
   save: () => {
-    const flow = {
-      nodes: get().nodes,
-      edges: get().edges,
-      viewport: get().viewport,
-    };
-    localStorage.setItem(flowKey, JSON.stringify(flow));
+    const serializableState = serializableStateFromState(get());
+    localStorage.setItem(flowKey, JSON.stringify(serializableState));
   },
   load: () => {
     (async () => {
-      const flow = loadSerializableStateFromLocalStorage();
-      if (flow) set({
-        nodes: flow.nodes,
-        edges: flow.edges,
-        viewport: flow.viewport,
-      });
+      const serializableState = loadSerializableStateFromLocalStorage();
+      if (serializableState) get().loadSerializableState(serializableState);
     })();
   },
   export: () => {
-    const flow = {
-      nodes: get().nodes,
-      edges: get().edges,
-      viewport: get().viewport,
-    };
-    const blob = new Blob([JSON.stringify(flow)], { type: "application/json" });
+    const serializableState = serializableStateFromState(get());
+    const blob = new Blob([JSON.stringify(serializableState)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement("a");
@@ -409,11 +413,11 @@ const useStore = create<State & Actions>((set, get) => ({
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const flow = await loadSerializableStateFromFile(file);
-      if (flow) set({
-        nodes: flow.nodes,
-        edges: flow.edges,
-        viewport: flow.viewport,
+      const serializableState = await loadSerializableStateFromFile(file);
+      if (serializableState) set({
+        nodes: serializableState.nodes,
+        edges: serializableState.edges,
+        viewport: serializableState.viewport,
       });
     };
 

@@ -11,7 +11,7 @@ import {
   Controls,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useId, useState } from "react";
 import { useShallow } from "zustand/shallow";
 
 type DroppableProperties = {
@@ -75,9 +75,9 @@ export default function Editor() {
 
   const [showDragDestination, setShowDragDestination] = useState(false);
 
-  // useEffect(() => {
-  //   (async () => load())();
-  // }, [load]);
+  useEffect(() => {
+    (async () => load())();
+  }, [load]);
 
   // TODO: make auto-saving toggleable
   // useEffect(() => {
@@ -90,9 +90,11 @@ export default function Editor() {
   //   })
   // }, [onSave])
 
+  const dndId = useId();
+
   return (
     <div className="w-full h-full flex flex-col">
-      <DndContext onDragEnd={handleAddNodeDragEnd}>
+      <DndContext id={dndId} onDragEnd={handleAddNodeDragEnd}>
       <Menubar
         className="shadow-md shadow-black z-20"
         menus={[
