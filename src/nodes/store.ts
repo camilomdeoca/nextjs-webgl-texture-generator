@@ -10,8 +10,8 @@ import {
   Viewport,
   ReactFlowInstance,
   OnInit,
+  Node,
 } from '@xyflow/react';
-import { BaseNodeData, type BaseNode } from './base-node';
 import { DragEndEvent } from '@dnd-kit/core';
 import { nodeDefinitions } from './definitions';
 import { buildFinalTemplate } from '@/glsl-parsing/glsl-templates';
@@ -32,7 +32,7 @@ export type BaseNodeParameters = {
 };
 
 type SerializableState = {
-  nodes: BaseNode[];
+  nodes: Node[];
   edges: Edge[];
   viewport: Viewport;
 
@@ -44,10 +44,10 @@ type SerializableState = {
 };
 
 type State = {
-  nodes: BaseNode[];
+  nodes: Node[];
   edges: Edge[];
   viewport: Viewport;
-  rfInstance: ReactFlowInstance<BaseNode> | null;
+  rfInstance: ReactFlowInstance | null;
 
   parameters: Map<string, BaseNodeParameterDefinition[]>;
   values: Map<string, BaseNodeParameterValue[]>;
@@ -64,17 +64,13 @@ type Actions = {
 
   onConnect: OnConnect;
 
-  onNodesChange: OnNodesChange<BaseNode>;
+  onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onViewportChange: (viewport: Viewport) => void;
-  onInit: OnInit<BaseNode>;
+  onInit: OnInit;
 
-  setNodes: (nodes: BaseNode[]) => void;
-  addNodes: (nodes: BaseNode[]) => void;
-  updateNodeData: (
-    id: string,
-    partialNodeData: Partial<BaseNodeData> | ((prev: BaseNode) => Partial<BaseNodeData>),
-  ) => void;
+  setNodes: (nodes: Node[]) => void;
+  addNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
 
   loadSerializableState: (serializableState: SerializableState) => void,
@@ -339,25 +335,8 @@ const useStore = create<State & Actions>((set, get) => ({
   setNodes: (nodes) => {
     set({ nodes });
   },
-  addNodes: (nodes: BaseNode[]) => {
+  addNodes: (nodes: Node[]) => {
     set({ nodes: [...get().nodes, ...nodes] });
-  },
-  updateNodeData: (id, nodeDataUpdate) => {
-    set({
-      nodes: get().nodes.map(node => {
-        if (node.id == id) {
-          const newData = typeof nodeDataUpdate === "function" ? nodeDataUpdate(node) : nodeDataUpdate;
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              ...newData,
-            },
-          };
-        }
-        return node;
-      }),
-    });
   },
   setEdges: (edges) => {
     // const targettedNodes: State["targettedNodes"] = new Map();
@@ -450,12 +429,10 @@ const useStore = create<State & Actions>((set, get) => ({
 
       const generatedId = "id" + Math.random().toString(16).slice(2);
 
-      const node: BaseNode = {
+      const node: Node = {
         id: generatedId,
         position: flowPosition,
-        data: {
-          ownValues: [],
-        },
+        data: {},
         type: "baseNode",
       };
 

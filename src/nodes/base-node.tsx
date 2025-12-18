@@ -1,17 +1,11 @@
-import { NodeProps, Node } from "@xyflow/react";
+import { NodeProps } from "@xyflow/react";
 import { BaseNodeComponent } from "./base-node-component";
 import { ChangeEvent } from "react";
 import { nodeDefinitions } from "./definitions";
-import useStore, { BaseNodeParameterValue } from "./store";
+import useStore from "./store";
 import { useShallow } from "zustand/shallow";
 
-export type BaseNodeData = {
-  ownValues: BaseNodeParameterValue[],
-};
-
-export type BaseNode = Node<BaseNodeData>;
-
-function BaseNode({ id }: NodeProps<BaseNode>) {
+function BaseNode({ id }: NodeProps) {
   // console.log("RENDER NODE");
   const type = useStore(state => state.types.get(id));
   if (!type) throw new Error(`Node ${id} isn't in store.`);
