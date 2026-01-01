@@ -15,6 +15,7 @@ import {
 import { DragEndEvent } from '@dnd-kit/core';
 import { nodeDefinitions } from './definitions';
 import { buildFinalTemplate } from '@/glsl-parsing/glsl-templates';
+import { allDefined } from '@/utils/lists';
 
 export type BaseNodeParameterValue = number;
 
@@ -130,19 +131,6 @@ export async function loadSerializableStateFromFile(file: File): Promise<Seriali
 
   if (isSerializableState(flow)) return flow;
   else return undefined;
-}
-
-function allDefined<T>(arr: (T | undefined)[]): arr is T[] {
-  return arr.every(v => v !== undefined);
-}
-
-function assertAllDefined<T>(
-  arr: (T | undefined)[],
-  msg: string = "Array contains undefined",
-): asserts arr is T[] {
-  if (arr.some(v => v === undefined)) {
-    throw new Error(msg);
-  }
 }
 
 // this is our useStore hook that we can use in our components to get parts of the store and call actions
