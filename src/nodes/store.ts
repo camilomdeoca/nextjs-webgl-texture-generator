@@ -171,22 +171,28 @@ const useStore = create<State & Actions>((set, get) => ({
     const inputNodeIds = definition.inputs.map(input => {
       return inputEdges.find(edge => edge.targetHandle == input.handleId)?.source;
     });
-    if (!allDefined(inputNodeIds)) return; // Some input is not connected for node
-
-    const inputTemplates = inputNodeIds.map(id => {
-      return get().templates.get(id);
-    });
-    assertAllDefined(inputTemplates, `Input node for ${id} doesn't have a template`);
-
-    const finalTemplate = buildFinalTemplate(
-      id,
-      definition.template,
-      definition.parameters.map(p => p.uniformName),
-      inputTemplates,
-    );
-
+    
     const newTemplates = new Map(get().templates.entries());
-    newTemplates.set(id, finalTemplate);
+    if (!allDefined(inputNodeIds)) { // Some input is not connected for node
+      newTemplates.delete(id);
+    } else {
+      const inputTemplates = inputNodeIds.map(id => {
+        return get().templates.get(id);
+      });
+
+      if (!allDefined(inputTemplates)) { // Some of the inputs doesnt have a defined template
+        newTemplates.delete(id);
+      } else {
+        const finalTemplate = buildFinalTemplate(
+          id,
+          definition.template,
+          definition.parameters.map(p => p.uniformName),
+          inputTemplates,
+        );
+
+        newTemplates.set(id, finalTemplate);
+      }
+    }
 
     set({ templates: newTemplates });
 
@@ -211,31 +217,36 @@ const useStore = create<State & Actions>((set, get) => ({
     const inputNodeIds = definition.inputs.map(input => {
       return inputEdges.find(edge => edge.targetHandle == input.handleId)?.source;
     });
-    if (!allDefined(inputNodeIds)) return; // Some input is not connected
-
-    const inputsParameters = inputNodeIds.map(id => {
-      return get().parameters.get(id);
-    });
-    assertAllDefined(inputsParameters, `Some input doesn't have parameters for node ${id}.`);
-
-    const ownParameters: BaseNodeParameterDefinition[] = definition.parameters.map(param => {
-      return {
-        name: param.name,
-        id: id,
-        uniformName: param.uniformName,
-        uniformType: param.uniformType,
-        inputType: param.inputType,
-      };
-    });
-
     const newParameters = new Map(get().parameters.entries());
-    newParameters.set(
-      id,
-      [
-        ...ownParameters,
-        ...inputsParameters.flat(),
-      ],
-    );
+
+    if (!allDefined(inputNodeIds)) { // Some input is not connected
+      newParameters.delete(id);
+    } else {
+      const inputsParameters = inputNodeIds.map(id => {
+        return get().parameters.get(id);
+      });
+      if (!allDefined(inputsParameters)) {
+        newParameters.delete(id);
+      } else {
+        const ownParameters: BaseNodeParameterDefinition[] = definition.parameters.map(param => {
+          return {
+            name: param.name,
+            id: id,
+            uniformName: param.uniformName,
+            uniformType: param.uniformType,
+            inputType: param.inputType,
+          };
+        });
+
+        newParameters.set(
+          id,
+          [
+            ...ownParameters,
+            ...inputsParameters.flat(),
+          ],
+        );
+      }
+    }
 
     set({ parameters: newParameters });
 
@@ -260,24 +271,28 @@ const useStore = create<State & Actions>((set, get) => ({
     const inputNodeIds = definition.inputs.map(input => {
       return inputEdges.find(edge => edge.targetHandle == input.handleId)?.source;
     });
-    if (!allDefined(inputNodeIds)) return; // Some input is not connected
-
-    const inputsValues = inputNodeIds.map(id => {
-      return get().values.get(id);
-    });
-    assertAllDefined(inputsValues, `Some input doesn't have values for node ${id}.`);
-
-    const ownValues = get().ownValues.get(id);
-    if (!ownValues) throw new Error(`Node ${id} doesn't have own values.`);
-
     const newValues = new Map(get().values.entries());
-    newValues.set(
-      id,
-      [
-        ...ownValues,
-        ...inputsValues.flat(),
-      ],
-    );
+    if (!allDefined(inputNodeIds)) { // Some input is not connected
+      newValues.delete(id);
+    } else {
+      const inputsValues = inputNodeIds.map(id => {
+        return get().values.get(id);
+      });
+      if (!allDefined(inputsValues)) {
+        newValues.delete(id);
+      } else {
+        const ownValues = get().ownValues.get(id);
+        if (!ownValues) throw new Error(`Node ${id} doesn't have own values.`);
+
+        newValues.set(
+          id,
+          [
+            ...ownValues,
+            ...inputsValues.flat(),
+          ],
+        );
+      }
+    }
 
     set({ values: newValues });
 
@@ -321,9 +336,24 @@ const useStore = create<State & Actions>((set, get) => ({
     });
   },
   onEdgesChange: (changes) => {
+    const nodesToUpdate = [];
+    for (const change of changes) {
+      if (change.type === "remove") {
+        const edge = get().edges.find(edge => edge.id == change.id);
+        if (!edge) throw new Error(`Couldn't find edge ${change.id}.`);
+        nodesToUpdate.push(edge.target);
+      }
+    }
+
     set({
       edges: applyEdgeChanges(changes, get().edges),
     });
+
+    for (const id of nodesToUpdate) {
+      get().updateParametersFromNode(id);
+      get().updateValuesFromNode(id);
+      get().updateTemplatesFromNode(id);
+    }
   },
   onViewportChange: (viewport) => {
     set({ viewport });
@@ -403,7 +433,6 @@ const useStore = create<State & Actions>((set, get) => ({
     input.click();
   },
   handleAddNodeDragEnd: (event: DragEndEvent) => {
-    console.log("START ADD NODE");
     if (event.collisions
       && event.collisions.length > 0
       && event.activatorEvent instanceof PointerEvent
@@ -452,7 +481,6 @@ const useStore = create<State & Actions>((set, get) => ({
       get().updateParametersFromNode(generatedId);
       get().updateValuesFromNode(generatedId);
       get().updateTemplatesFromNode(generatedId);
-      console.log(get());
     } else {
       console.warn("ERROR: adding node", event);
     }
