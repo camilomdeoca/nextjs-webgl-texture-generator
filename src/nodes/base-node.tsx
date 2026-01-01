@@ -18,7 +18,7 @@ function BaseNode(props: NodeProps) {
   if (!ownValues) throw new Error(`Node ${id} doesnt have its own values.`);
   const setNodeValue = useStore(state => state.setNodeValue);
 
-  const inputs = definition.parameters.map(({ name, inputType }, i) => {
+  const inputs = definition.parameters.map(({ name, inputType, defaultValue }, i) => {
     return (
       <div key={name}>
         <label className="block text-left" htmlFor="seed">{name}</label>
@@ -28,7 +28,7 @@ function BaseNode(props: NodeProps) {
           type={inputType}
           step={0.001}
           onChange={(e: ChangeEvent<HTMLInputElement>) => {
-            setNodeValue(id, i, parseFloat(e.target.value));
+            setNodeValue(id, i, parseFloat(e.target.value) || defaultValue);
           }}
           value={ownValues[i]} // TODO: Do something better (might not be a number)
         />
