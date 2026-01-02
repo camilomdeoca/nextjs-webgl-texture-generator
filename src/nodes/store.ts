@@ -25,11 +25,6 @@ export type BaseNodeParameterDefinition = {
   inputType: string,
 };
 
-export type BaseNodeParameters = {
-  definitions: BaseNodeParameterDefinition[],
-  values: BaseNodeParameterValue[],
-};
-
 type SerializableState = {
   nodes: Node[];
   edges: Edge[];
@@ -228,8 +223,7 @@ const useStore = create<State & Actions>((set, get) => ({
           id,
           [
             ...ownParameters,
-            // Removing duplicates in case two inputs use the same node
-            ...new Set(inputsParameters.flat()),
+            ...inputsParameters.flat(),
           ],
         );
       }
@@ -275,8 +269,7 @@ const useStore = create<State & Actions>((set, get) => ({
           id,
           [
             ...ownValues,
-            // Removing duplicates in case two inputs use the same node
-            ...new Set(inputsValues.flat()),
+            ...inputsValues.flat(),
           ],
         );
       }

@@ -99,7 +99,16 @@ function Canvas({
       return;
     }
 
+    // TODO: instead of removing duplicates here try to have a set of input
+    // nodes for each node (the indirect input nodes would also be there) and
+    // the duplicates would be removed for being a set. The values would be
+    // obtained from the ownValues of each node in that set (wouldnt need the
+    // values array anymore)
+    const uniqueParameters = new Set();
     const uniformsSrc = parameters.map(({ id, uniformName, uniformType }) => {
+      const uniqueKey = `${id}|${uniformName}`;
+      if (uniqueParameters.has(uniqueKey)) return;
+      uniqueParameters.add(uniqueKey);
       return `uniform ${uniformType} ${id}_${uniformName};`;
     }).join("\n")
 
