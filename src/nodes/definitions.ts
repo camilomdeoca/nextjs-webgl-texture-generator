@@ -115,5 +115,36 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
     ],
     inputs: [],
   }],
+  ["warp", {
+    name: "Warp",
+    template: preprocessTemplate(`
+      vec4 warperValue;
+      vec2 uv = $UV;
+      $INPUT0(warperValue, uv)
+      vec2 d = vec2(dFdx(warperValue.r), dFdy(warperValue.r));
+
+      vec4 outputColor;
+      uv += d * $strength;
+      $INPUT1(outputColor, uv)
+
+      $OUT = outputColor;
+    `),
+    parameters: [
+      {
+        name: "Strength",
+        uniformName: "strength",
+        inputType: "slider",
+        uniformType: "float",
+        min: 0.001,
+        max: 1.0,
+        step: 0.001,
+        defaultValue: 1.0,
+      },
+    ],
+    inputs: [
+      { name: "Warper", handleId: "warper" },
+      { name: "Warped", handleId: "warped" },
+    ],
+  }],
 ]);
 export { nodeDefinitions };
