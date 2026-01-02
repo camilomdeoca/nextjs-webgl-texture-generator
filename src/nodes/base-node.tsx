@@ -18,22 +18,44 @@ function BaseNode(props: NodeProps) {
   if (!ownValues) throw new Error(`Node ${id} doesnt have its own values.`);
   const setNodeValue = useStore(state => state.setNodeValue);
 
-  const inputs = definition.parameters.map(({ name, inputType, defaultValue }, i) => {
-    return (
-      <div key={name}>
-        <label className="block text-left" htmlFor="seed">{name}</label>
-        <input
-          className="w-full nodrag"
-          id="seed"
-          type={inputType}
-          step={0.001}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => {
-            setNodeValue(id, i, parseFloat(e.target.value) || defaultValue);
-          }}
-          value={ownValues[i]} // TODO: Do something better (might not be a number)
-        />
-      </div>
-    );
+  const inputs = definition.parameters.map((param, i) => {
+    if (param.inputType === "number") {
+      return (
+        <div key={param.name}>
+          <label className="block text-left" htmlFor="seed">{param.name}</label>
+          <input
+            className="w-full nodrag"
+            id="seed"
+            type="number"
+            step={param.step}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              setNodeValue(id, i, parseFloat(e.target.value) || param.defaultValue);
+            }}
+            value={ownValues[i]} // TODO: Do something better (might not be a number)
+          />
+        </div>
+      );
+    }
+
+    if (param.inputType === "slider") {
+      return (
+        <div key={param.name}>
+          <label className="block text-left" htmlFor="seed">{param.name}</label>
+          <input
+            className="w-full nodrag accent-neutral-400"
+            id="seed"
+            type="range"
+            min={param.min}
+            max={param.max}
+            step={param.step}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              setNodeValue(id, i, parseFloat(e.target.value) ?? param.defaultValue);
+            }}
+            value={ownValues[i]} // TODO: Do something better (might not be a number)
+          />
+        </div>
+      );
+    }
   });
 
   return (

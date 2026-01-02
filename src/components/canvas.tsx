@@ -151,6 +151,13 @@ function Canvas({
           }
           gl.uniform1f(location, value);
           break;
+        case "uint":
+          if (typeof value !== 'number') {
+            console.log(value);
+            throw new Error(`Invalid value type (${typeof value}) for uniform type (${uniformType})`);
+          }
+          gl.uniform1ui(location, value);
+          break;
         default:
           throw new Error(`Unform type: \`${uniformType}\` invalid or not implemented.`)
       }
