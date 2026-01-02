@@ -64,7 +64,13 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
       float value = 0.0;
       for (uint octave_idx = 0u; octave_idx < $octaves; octave_idx++)
       {
-        value += simplex3d(vec3($UV, $seed) * $scale * pow(2.0, float(octave_idx))) * pow(0.5, float(octave_idx));
+        float weight = pow($octave_weight_relation, float(octave_idx));
+        if (abs($octave_weight_relation - 1.0) < 1e-6)
+          weight *= 1.0 / float($octaves);
+        else
+          weight *= (1.0 - $octave_weight_relation) / (1.0 - pow($octave_weight_relation, float($octaves)));
+
+        value += simplex3d(vec3($UV, $seed) * $scale * pow(2.0, float(octave_idx))) * weight;
       }
       $OUT = vec4(vec3(value * 0.5 + 0.5), 1.0);
     `),
@@ -86,6 +92,16 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         max: 100,
         step: 0.01,
         defaultValue: 10,
+      },
+      {
+        name: "Octave weight relation",
+        uniformName: "octave_weight_relation",
+        inputType: "slider",
+        uniformType: "float",
+        min: 0.001,
+        max: 2.0,
+        step: 0.001,
+        defaultValue: 0.5,
       },
       {
         name: "Octaves",
