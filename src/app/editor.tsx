@@ -110,7 +110,7 @@ export default function Editor() {
         ]}
       />
       <div className="flex flex-row w-full h-full"  >
-        <NodesPalette className="w-50 h-full shadow-md shadow-black z-10" />
+        <NodesPalette className="w-50 shadow-md shadow-black z-10" />
         <Droppable
           id="droppable"
           className="relative flex-1"
