@@ -1,5 +1,4 @@
 import { preprocessTemplate } from "@/glsl-parsing/glsl-templates";
-import { BaseNodeParameterValue } from "./store";
 
 type SliderParameter = {
   inputType: "slider",

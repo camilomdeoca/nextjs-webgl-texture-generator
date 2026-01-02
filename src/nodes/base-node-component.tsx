@@ -4,7 +4,6 @@ import { ReactNode } from "react";
 import { OneConnectionHandle } from "./one-connection-handle";
 import useStore from "./store";
 import { useShallow } from "zustand/shallow";
-import { nodeDefinitions } from "./definitions";
 
 export type BaseNodeComponentParameters = {
   nodeProps: NodeProps,
@@ -62,23 +61,7 @@ export function BaseNodeComponent({
   
   const template = useStore(state => state.templates.get(id));
   const parameters = useStore(useShallow(state => state.parameters.get(id)));
-  // if (!parameters) throw new Error(`Node ${id} doesn't have parameters in store.`);
   const values = useStore(useShallow(state => state.values.get(id)));
-  // if (!values) throw new Error(`Node ${id} doesn't have values in store.`);
-  
-  const type = useStore(state => state.types.get(id));
-  if (!type) throw new Error(`Node ${id} isn't in store.`);
-
-  const definition = nodeDefinitions.get(type);
-  if (!definition) throw new Error(`Invalid type: ${type}`);
-  
-  const shouldRender = useStore(useShallow(state => {
-    const inputEdges = state.edges.filter(edge => edge.target === id);
-    return definition.inputs.every(input => {
-      return inputEdges.find(edge => edge.targetHandle == input.handleId)?.target === id;
-    });
-  }));
-  // const shouldRender = true;
 
   return (
     <div
@@ -97,8 +80,8 @@ export function BaseNodeComponent({
       </div>
       <div className="p-2.5">
         <Canvas
-          shaderTemplate={shouldRender ? template : undefined}
-          parameters={shouldRender ? parameters : undefined}
+          shaderTemplate={template}
+          parameters={parameters}
           values={values}
         />
       </div>

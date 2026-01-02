@@ -322,6 +322,12 @@ const useStore = create<State & Actions>((set, get) => ({
     set({
       nodes: applyNodeChanges(changes, get().nodes),
     });
+    for (const change of changes) {
+      if (change.type === "remove") {
+        get().types.delete(change.id);
+        get().ownValues.delete(change.id);
+      }
+    }
   },
   onEdgesChange: (changes) => {
     const nodesToUpdate = [];
