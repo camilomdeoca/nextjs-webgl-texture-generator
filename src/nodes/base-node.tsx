@@ -4,6 +4,7 @@ import { ChangeEvent } from "react";
 import { nodeDefinitions } from "./definitions";
 import useStore from "./store";
 import { useShallow } from "zustand/shallow";
+import { ColorPicker } from "@/components/color-picker";
 
 function BaseNode(props: NodeProps) {
   const id = props.id;
@@ -20,6 +21,13 @@ function BaseNode(props: NodeProps) {
 
   const inputs = definition.parameters.map((param, i) => {
     if (param.inputType === "number") {
+      const ownValue = ownValues[i];
+      if (ownValue.type !== param.defaultValue.type) {
+        console.log("own", ownValue)
+        console.log("default", param.defaultValue);
+        throw new Error("Invalid type in ownValues");
+      }
+
       return (
         <div key={param.name}>
           <label className="block text-left" htmlFor="seed">{param.name}</label>
@@ -28,16 +36,25 @@ function BaseNode(props: NodeProps) {
             id="seed"
             type="number"
             step={param.step}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setNodeValue(id, i, parseFloat(e.target.value) || param.defaultValue);
-            }}
-            value={ownValues[i]} // TODO: Do something better (might not be a number)
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setNodeValue(
+              id,
+              i,
+              {
+                type: param.defaultValue.type,
+                value: parseFloat(e.target.value) ?? param.defaultValue.value,
+              },
+            )}
+            value={ownValue.value}
           />
         </div>
       );
     }
 
     if (param.inputType === "slider") {
+      const ownValue = ownValues[i];
+      if (ownValue.type !== param.defaultValue.type)
+        throw new Error("Invalid type in ownValues");
+
       return (
         <div key={param.name}>
           <label className="block text-left" htmlFor="seed">{param.name}</label>
@@ -48,14 +65,46 @@ function BaseNode(props: NodeProps) {
             min={param.min}
             max={param.max}
             step={param.step}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setNodeValue(id, i, parseFloat(e.target.value) ?? param.defaultValue);
-            }}
-            value={ownValues[i]} // TODO: Do something better (might not be a number)
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setNodeValue(
+              id,
+              i,
+              {
+                type: param.defaultValue.type,
+                value: parseFloat(e.target.value) ?? param.defaultValue.value,
+              },
+            )}
+            value={ownValue.value}
           />
         </div>
       );
     }
+    
+    if (param.inputType === "color") {
+      const ownValue = ownValues[i];
+      if (ownValue.type !== param.defaultValue.type)
+        throw new Error("Invalid type in ownValues");
+
+      return (
+        <div key={param.name}>
+          <label className="block text-left" htmlFor="seed">{param.name}</label>
+          <ColorPicker
+            className="w-full nodrag"
+            id="seed"
+            onChange={(color) => setNodeValue(
+              id,
+              i,
+              {
+                type: param.defaultValue.type,
+                value: color ?? param.defaultValue.value,
+              },
+            )}
+            value={ownValue.value}
+          />
+        </div>
+      );
+    }
+
+    param satisfies never;
   });
 
   return (

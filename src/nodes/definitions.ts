@@ -1,22 +1,40 @@
 import { preprocessTemplate } from "@/glsl-parsing/glsl-templates";
 
+export type BaseNodeParameterValue = NumberValue | Number4Value;
+
+type NumberValue = {
+  type: "number",
+  value: number,
+};
+
+type Number4Value = {
+  type: "number4",
+  value: [number, number, number, number],
+};
+
 type SliderParameter = {
   inputType: "slider",
   uniformType: "float" | "uint",
   min: number,
   max: number,
   step: number,
-  defaultValue: number,
+  defaultValue: NumberValue,
 };
 
 type NumberParameter = {
   inputType: "number",
   uniformType: "float",
   step: number,
-  defaultValue: number,
+  defaultValue: NumberValue,
 };
 
-type Parameter = (SliderParameter | NumberParameter) & {
+type ColorParameter = {
+  inputType: "color",
+  uniformType: "vec4",
+  defaultValue: Number4Value,
+};
+
+type Parameter = (SliderParameter | NumberParameter | ColorParameter) & {
   name: string,
   uniformName: string,
 };
@@ -50,7 +68,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         min: 0,
         max: 10,
         step: 0.01,
-        defaultValue: 1,
+        defaultValue: { type: "number", value: 1.0 },
       },
     ],
     inputs: [
@@ -80,7 +98,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         inputType: "number",
         uniformType: "float",
         step: 0.001,
-        defaultValue: 0,
+        defaultValue: { type: "number", value: 0.0 },
       },
       {
         name: "Scale",
@@ -90,7 +108,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         min: 0.001,
         max: 100,
         step: 0.01,
-        defaultValue: 10,
+        defaultValue: { type: "number", value: 10.0 },
       },
       {
         name: "Octave weight relation",
@@ -100,7 +118,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         min: 0.001,
         max: 2.0,
         step: 0.001,
-        defaultValue: 0.5,
+        defaultValue: { type: "number", value: 0.5 },
       },
       {
         name: "Octaves",
@@ -110,7 +128,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         min: 1,
         max: 8,
         step: 1,
-        defaultValue: 1,
+        defaultValue: { type: "number", value: 1.0 },
       },
     ],
     inputs: [],
@@ -138,13 +156,50 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         min: 0.001,
         max: 1.0,
         step: 0.001,
-        defaultValue: 1.0,
+        defaultValue: { type: "number", value: 1.0 },
       },
     ],
     inputs: [
       { name: "Warper", handleId: "warper" },
       { name: "Warped", handleId: "warped" },
     ],
+  }],
+  ["mix", {
+    name: "Mix",
+    template: preprocessTemplate(`
+      vec2 uv = $UV;
+      vec4 light;
+      $INPUT0(light, uv)
+      vec4 dark;
+      $INPUT1(dark, uv)
+      vec4 mask;
+      $INPUT2(mask, uv)
+
+      $OUT = mix(dark, light, mask.r);
+    `),
+    parameters: [],
+    inputs: [
+      { name: "Light mask", handleId: "light" },
+      { name: "Dark mask", handleId: "dark" },
+      { name: "Mask", handleId: "mask" },
+    ],
+  }],
+  ["solid_color", {
+    name: "Solid color",
+    template: preprocessTemplate(`
+      vec2 uv = $UV;
+      $OUT = $color;
+    `),
+    parameters: [
+      {
+        name: "Color",
+        uniformName: "color",
+        inputType: "color",
+        uniformType: "vec4",
+        defaultValue: { type: "number4", value: [1.0, 1.0, 1.0, 1.0] },
+      },
+    ],
+    inputs: [],
   }],
 ]);
 export { nodeDefinitions };

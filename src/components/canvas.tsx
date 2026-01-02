@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import glslUtils from "@/shaders/utils.glsl";
-import { BaseNodeParameterDefinition, BaseNodeParameterValue } from "@/nodes/store";
+import { BaseNodeParameterDefinition } from "@/nodes/store";
+import { BaseNodeParameterValue } from "@/nodes/definitions";
 
 const vsSrc = `#version 300 es
 precision highp float;
@@ -145,18 +146,25 @@ function Canvas({
       const value = values[i];
       switch (uniformType) {
         case "float":
-          if (typeof value !== 'number') {
+          if (value.type !== 'number') {
             console.log(value);
-            throw new Error(`Invalid value type (${typeof value}) for uniform type (${uniformType})`);
+            throw new Error(`Invalid value type (${value.type}) for uniform type (${uniformType})`);
           }
-          gl.uniform1f(location, value);
+          gl.uniform1f(location, value.value);
+          break;
+        case "vec4":
+          if (value.type !== 'number4') {
+            console.log(value);
+            throw new Error(`Invalid value type (${value.type}) for uniform type (${uniformType})`);
+          }
+          gl.uniform4f(location, ...value.value);
           break;
         case "uint":
-          if (typeof value !== 'number') {
+          if (value.type !== 'number') {
             console.log(value);
-            throw new Error(`Invalid value type (${typeof value}) for uniform type (${uniformType})`);
+            throw new Error(`Invalid value type (${value.type}) for uniform type (${uniformType})`);
           }
-          gl.uniform1ui(location, value);
+          gl.uniform1ui(location, value.value);
           break;
         default:
           throw new Error(`Unform type: \`${uniformType}\` invalid or not implemented.`)

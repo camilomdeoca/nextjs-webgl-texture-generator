@@ -13,11 +13,9 @@ import {
   Node,
 } from '@xyflow/react';
 import { DragEndEvent } from '@dnd-kit/core';
-import { nodeDefinitions } from './definitions';
+import { BaseNodeParameterValue, nodeDefinitions } from './definitions';
 import { buildFinalTemplate } from '@/glsl-parsing/glsl-templates';
 import { allDefined } from '@/utils/lists';
-
-export type BaseNodeParameterValue = number;
 
 export type BaseNodeParameterDefinition = {
   name: string,
