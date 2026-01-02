@@ -228,7 +228,8 @@ const useStore = create<State & Actions>((set, get) => ({
           id,
           [
             ...ownParameters,
-            ...inputsParameters.flat(),
+            // Removing duplicates in case two inputs use the same node
+            ...new Set(inputsParameters.flat()),
           ],
         );
       }
@@ -274,7 +275,8 @@ const useStore = create<State & Actions>((set, get) => ({
           id,
           [
             ...ownValues,
-            ...inputsValues.flat(),
+            // Removing duplicates in case two inputs use the same node
+            ...new Set(inputsValues.flat()),
           ],
         );
       }
