@@ -2,8 +2,7 @@ import Canvas from "@/components/canvas";
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import { ReactNode } from "react";
 import { OneConnectionHandle } from "./one-connection-handle";
-import useStore from "./store";
-import { useShallow } from "zustand/shallow";
+import useStore, { getParametersFromNode, getValuesForParameters, useCustomComparison } from "./store";
 
 export type BaseNodeComponentParameters = {
   nodeProps: NodeProps,
@@ -58,10 +57,24 @@ export function BaseNodeComponent({
   ));
 
   const id = nodeProps.id;
-  
+
   const template = useStore(state => state.templates.get(id));
-  const parameters = useStore(useShallow(state => state.parameters.get(id)));
-  const values = useStore(useShallow(state => state.values.get(id)));
+  const parameters = useStore(useCustomComparison(
+    state => getParametersFromNode(state, id),
+    (a, b) => {
+      if (a === b) return true;
+      if (a === undefined || b === undefined) return false;
+      return a.every((_, i) => a[i].uniformName === b[i].uniformName && a[i].id === b[i].id);
+    },
+  ));
+  const values = useStore(useCustomComparison(
+    state => parameters ? getValuesForParameters(state, parameters) : undefined,
+    (a, b) => {
+      if (a === b) return true;
+      if (a === undefined || b === undefined) return false;
+      return a.every((_, i) => a[i].type === b[i].type && a[i].value === b[i].value);
+    },
+  ));
 
   return (
     <div

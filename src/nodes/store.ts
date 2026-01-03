@@ -1,4 +1,3 @@
-import { create } from 'zustand';
 import {
   addEdge,
   applyNodeChanges,
@@ -16,6 +15,8 @@ import { DragEndEvent } from '@dnd-kit/core';
 import { BaseNodeParameterValue, nodeDefinitions } from './definitions';
 import { buildFinalTemplate } from '@/glsl-parsing/glsl-templates';
 import { allDefined } from '@/utils/lists';
+import { create } from 'zustand';
+import { useRef } from 'react';
 
 export type BaseNodeParameterDefinition = {
   name: string,
@@ -30,8 +31,7 @@ type SerializableState = {
   edges: Edge[];
   viewport: Viewport;
 
-  parameters: [string, BaseNodeParameterDefinition[]][];
-  values: [string, BaseNodeParameterValue[]][];
+  inputNodes: [string, string[]][];
   ownValues: [string, BaseNodeParameterValue[]][];
   templates: [string, string][];
   types: [string, string][];
@@ -43,8 +43,8 @@ type State = {
   viewport: Viewport;
   rfInstance: ReactFlowInstance | null;
 
-  parameters: Map<string, BaseNodeParameterDefinition[]>;
-  values: Map<string, BaseNodeParameterValue[]>;
+  // Input nodes ids (including indirect inputs)
+  inputNodes: Map<string, Set<string>>;
   ownValues: Map<string, BaseNodeParameterValue[]>;
   templates: Map<string, string>;
   types: Map<string, string>;
@@ -52,8 +52,7 @@ type State = {
 
 type Actions = {
   updateTemplatesFromNode: (id: string) => void;
-  updateParametersFromNode: (id: string) => void;
-  updateValuesFromNode: (id: string) => void;
+  updateInputNodesFromNode: (id: string) => void;
   setNodeValue: (id: string, paramIdx: number, value: BaseNodeParameterValue) => void;
 
   onConnect: OnConnect;
@@ -77,14 +76,26 @@ type Actions = {
 
 const flowKey = 'texture-generator-flow';
 
+export function useCustomComparison<S, U>(
+  selector: (state: S) => U,
+  isEqual: (a: U, b: U) => boolean,
+): (state: S) => U {
+  const prev = useRef<U>(undefined)
+  return (state) => {
+    const next = selector(state)
+    return prev.current !== undefined && isEqual(prev.current, next)
+      ? (prev.current as U)
+      : (prev.current = next)
+  }
+}
+
 // TODO: check also inside array fields
 function isSerializableState(flow: unknown): flow is SerializableState {
   if (typeof flow !== "object" || flow === null) return false;
 
   if (!("nodes" in flow) || !Array.isArray(flow.nodes)) return false;
   if (!("edges" in flow) || !Array.isArray(flow.edges)) return false;
-  if (!("parameters" in flow) || !Array.isArray(flow.parameters)) return false;
-  if (!("values" in flow) || !Array.isArray(flow.values)) return false;
+  if (!("inputNodes" in flow) || !Array.isArray(flow.inputNodes)) return false;
   if (!("ownValues" in flow) || !Array.isArray(flow.ownValues)) return false;
   if (!("templates" in flow) || !Array.isArray(flow.templates)) return false;
   if (!("types" in flow) || !Array.isArray(flow.types)) return false;
@@ -109,8 +120,11 @@ function serializableStateFromState(state: State & Actions): SerializableState {
     nodes: state.nodes,
     edges: state.edges,
     viewport: state.viewport,
-    parameters: state.parameters.entries().toArray(),
-    values: state.values.entries().toArray(),
+    inputNodes: state.inputNodes.entries()
+      .map<[string, string[]]>(
+        ([id, inputs]) => [id, inputs.values().toArray()]
+      )
+      .toArray(),
     ownValues: state.ownValues.entries().toArray(),
     templates: state.templates.entries().toArray(),
     types: state.types.entries().toArray(),
@@ -126,6 +140,57 @@ export async function loadSerializableStateFromFile(file: File): Promise<Seriali
   else return undefined;
 }
 
+export function getParametersFromNode(
+  state: State & Actions,
+  id: string,
+): BaseNodeParameterDefinition[] | undefined {
+  const inputNodes = state.inputNodes.get(id);
+  if (!inputNodes) return undefined;
+  
+  const parameters = [...inputNodes.values(), id].flatMap(inputId => {
+    const inputType = state.types.get(inputId);
+    if (!inputType) throw new Error(`node ${inputId} isn't in types map.`);
+
+    const definition = nodeDefinitions.get(inputType);
+    if (!definition) throw new Error(`node ${inputId} has invalid type: ${inputType}.`);
+
+    return definition.parameters.map(param => {
+      return {
+        name: param.name,
+        id: inputId,
+        uniformName: param.uniformName,
+        uniformType: param.uniformType,
+        inputType: param.inputType,
+      }
+    });
+  });
+
+  return parameters;
+}
+
+export function getValuesForParameters(
+  state: State & Actions,
+  parameters: BaseNodeParameterDefinition[],
+): BaseNodeParameterValue[] | undefined {
+  const values = parameters.map(param => {
+    const nodeType = state.types.get(param.id);
+    if (!nodeType) return undefined;
+
+    const definition = nodeDefinitions.get(nodeType);
+    if (!definition) throw new Error(`node ${param.id} has invalid type: ${nodeType}.`);
+
+    const paramIdx = definition.parameters.findIndex(paramDef => paramDef.uniformName === param.uniformName);
+    if (paramIdx < 0) throw new Error(`There is no ${param.uniformName} in type: ${nodeType}`);
+
+    const value = state.ownValues.get(param.id)?.[paramIdx];
+    if (!value) throw new Error(`No value for parameter ${param.uniformName} in node ${param.id}`);
+
+    return value;
+  });
+  if (!allDefined(values)) return undefined;
+  return values;
+}
+
 // this is our useStore hook that we can use in our components to get parts of the store and call actions
 const useStore = create<State & Actions>((set, get) => ({
   nodes: [],
@@ -133,8 +198,7 @@ const useStore = create<State & Actions>((set, get) => ({
   viewport: { x: 0, y: 0, zoom: 1 },
   rfInstance: null,
 
-  parameters: new Map(),
-  values: new Map(),
+  inputNodes: new Map(),
   ownValues: new Map(),
   templates: new Map(),
   types: new Map(),
@@ -185,7 +249,7 @@ const useStore = create<State & Actions>((set, get) => ({
       get().updateTemplatesFromNode(id);
     }
   },
-  updateParametersFromNode: (id: string) => {
+  updateInputNodesFromNode: (id: string) => {
     const type = get().types.get(id);
     if (!type) throw new Error(`Node: ${id} has no type.`);
 
@@ -195,94 +259,38 @@ const useStore = create<State & Actions>((set, get) => ({
     // TODO: have the incomming and outgoing nodes in two maps to make this lookup faster
     const inputEdges = get().edges.filter(edge => edge.target === id);
 
-    const inputNodeIds = definition.inputs.map(input => {
+    const directInputNodeIds = definition.inputs.map(input => {
       return inputEdges.find(edge => edge.targetHandle == input.handleId)?.source;
     });
-    const newParameters = new Map(get().parameters.entries());
+    const newInputNodes = new Map(get().inputNodes.entries());
 
-    if (!allDefined(inputNodeIds)) { // Some input is not connected
-      newParameters.delete(id);
+    if (!allDefined(directInputNodeIds)) { // Some input is not connected
+      newInputNodes.delete(id);
     } else {
-      const inputsParameters = inputNodeIds.map(id => {
-        return get().parameters.get(id);
+      const inputsInputNodes = directInputNodeIds.map(id => {
+        return get().inputNodes.get(id);
       });
-      if (!allDefined(inputsParameters)) {
-        newParameters.delete(id);
+      if (!allDefined(inputsInputNodes)) {
+        newInputNodes.delete(id);
       } else {
-        const ownParameters: BaseNodeParameterDefinition[] = definition.parameters.map(param => {
-          return {
-            name: param.name,
-            id: id,
-            uniformName: param.uniformName,
-            uniformType: param.uniformType,
-            inputType: param.inputType,
-          };
-        });
-
-        newParameters.set(
+        newInputNodes.set(
           id,
-          [
-            ...ownParameters,
-            ...inputsParameters.flat(),
-          ],
+          new Set([
+            ...directInputNodeIds,
+            ...inputsInputNodes.map(ids => ids.values().toArray()).flat(),
+          ]),
         );
       }
     }
 
-    set({ parameters: newParameters });
+    set({ inputNodes: newInputNodes });
 
     // trigger nodes that have this one as input
     const outputNodeIds = get().edges
       .filter(edge => edge.source === id)
       .map(e => e.target);
     for (const id of outputNodeIds) {
-      get().updateParametersFromNode(id);
-    }
-  },
-  updateValuesFromNode: (id: string) => {
-    const type = get().types.get(id);
-    if (!type) throw new Error(`Node: ${id} has no type.`);
-
-    const definition = nodeDefinitions.get(type);
-    if (!definition) throw new Error(`Invalid node type: ${type}.`);
-
-    // TODO: have the incomming and outgoing nodes in two maps to make this lookup faster
-    const inputEdges = get().edges.filter(edge => edge.target === id);
-
-    const inputNodeIds = definition.inputs.map(input => {
-      return inputEdges.find(edge => edge.targetHandle == input.handleId)?.source;
-    });
-    const newValues = new Map(get().values.entries());
-    if (!allDefined(inputNodeIds)) { // Some input is not connected
-      newValues.delete(id);
-    } else {
-      const inputsValues = inputNodeIds.map(id => {
-        return get().values.get(id);
-      });
-      if (!allDefined(inputsValues)) {
-        newValues.delete(id);
-      } else {
-        const ownValues = get().ownValues.get(id);
-        if (!ownValues) throw new Error(`Node ${id} doesn't have own values.`);
-
-        newValues.set(
-          id,
-          [
-            ...ownValues,
-            ...inputsValues.flat(),
-          ],
-        );
-      }
-    }
-
-    set({ values: newValues });
-
-    // trigger nodes that have this one as input
-    const outputNodeIds = get().edges
-      .filter(edge => edge.source === id)
-      .map(e => e.target);
-    for (const id of outputNodeIds) {
-      get().updateValuesFromNode(id);
+      get().updateInputNodesFromNode(id);
     }
   },
 
@@ -297,8 +305,6 @@ const useStore = create<State & Actions>((set, get) => ({
     newOwnValues.set(id, newOwnValuesForThisNode);
 
     set({ ownValues: newOwnValues });
-
-    get().updateValuesFromNode(id);
   },
   
   onConnect: (connection) => {
@@ -306,8 +312,7 @@ const useStore = create<State & Actions>((set, get) => ({
       edges: addEdge(connection, get().edges),
     });
 
-    get().updateParametersFromNode(connection.target);
-    get().updateValuesFromNode(connection.target);
+    get().updateInputNodesFromNode(connection.target);
     get().updateTemplatesFromNode(connection.target);
   },
 
@@ -337,8 +342,7 @@ const useStore = create<State & Actions>((set, get) => ({
     });
 
     for (const id of nodesToUpdate) {
-      get().updateParametersFromNode(id);
-      get().updateValuesFromNode(id);
+      get().updateInputNodesFromNode(id);
       get().updateTemplatesFromNode(id);
     }
   },
@@ -374,8 +378,7 @@ const useStore = create<State & Actions>((set, get) => ({
       nodes: serializableState.nodes,
       edges: serializableState.edges,
       viewport: serializableState.viewport,
-      parameters: new Map(serializableState.parameters),
-      values: new Map(serializableState.values),
+      inputNodes: new Map(serializableState.inputNodes.map(([id, inputs]) => [id, new Set(inputs)])),
       ownValues: new Map(serializableState.ownValues),
       templates: new Map(serializableState.templates),
       types: new Map(serializableState.types),
@@ -388,6 +391,7 @@ const useStore = create<State & Actions>((set, get) => ({
   load: () => {
     (async () => {
       const serializableState = loadSerializableStateFromLocalStorage();
+      console.log("LOADED", serializableState);
       if (serializableState) get().loadSerializableState(serializableState);
     })();
   },
@@ -465,8 +469,7 @@ const useStore = create<State & Actions>((set, get) => ({
 
       get().addNodes([node]);
 
-      get().updateParametersFromNode(generatedId);
-      get().updateValuesFromNode(generatedId);
+      get().updateInputNodesFromNode(generatedId);
       get().updateTemplatesFromNode(generatedId);
     } else {
       console.warn("ERROR: adding node", event);
