@@ -12,19 +12,13 @@ import {
   Node,
 } from '@xyflow/react';
 import { DragEndEvent } from '@dnd-kit/core';
-import { BaseNodeParameterValue, nodeDefinitions } from './definitions';
+import { BaseNodeParameterValue, nodeDefinitions, Parameter } from './definitions';
 import { buildFinalTemplate } from '@/glsl-parsing/glsl-templates';
 import { allDefined } from '@/utils/lists';
 import { create } from 'zustand';
 import { useRef } from 'react';
 
-export type BaseNodeParameterDefinition = {
-  name: string,
-  id: string,
-  uniformName: string,
-  uniformType: string,
-  inputType: string,
-};
+export type BaseNodeParameterDefinition = Omit<Parameter, "defaultValue"> & { id: string };
 
 type SerializableState = {
   nodes: Node[];

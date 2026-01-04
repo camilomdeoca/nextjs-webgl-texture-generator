@@ -1,6 +1,6 @@
 import { preprocessTemplate } from "@/glsl-parsing/glsl-templates";
 
-export type BaseNodeParameterValue = NumberValue | Number4Value;
+export type BaseNodeParameterValue = NumberValue | Number4Value | Number4ArrayValue;
 
 type NumberValue = {
   type: "number",
@@ -12,29 +12,41 @@ type Number4Value = {
   value: [number, number, number, number],
 };
 
+type Number4ArrayValue = {
+  type: "number4array",
+  value: [number, number, number, number][],
+};
+
 type SliderParameter = {
   inputType: "slider",
-  uniformType: "float" | "uint",
+  uniformType: { type: "float" | "uint", length: 1 },
   min: number,
   max: number,
   step: number,
-  defaultValue: NumberValue,
 };
 
 type NumberParameter = {
   inputType: "number",
-  uniformType: "float",
+  uniformType: { type: "float", length: 1 },
   step: number,
-  defaultValue: NumberValue,
 };
 
 type ColorParameter = {
   inputType: "color",
-  uniformType: "vec4",
-  defaultValue: Number4Value,
+  uniformType: { type: "vec4", length: 1 },
 };
 
-type Parameter = (SliderParameter | NumberParameter | ColorParameter) & {
+type ColorArrayParameter = {
+  inputType: "colorarray",
+  uniformType: { type: "vec4", length: number},
+};
+
+export type Parameter = (
+  | SliderParameter & { defaultValue: NumberValue }
+  | NumberParameter & { defaultValue: NumberValue }
+  | ColorParameter & { defaultValue: Number4Value }
+  | ColorArrayParameter & { defaultValue: Number4ArrayValue }
+) & {
   name: string,
   uniformName: string,
 };
@@ -64,7 +76,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Brightness",
         uniformName: "brightness",
         inputType: "slider",
-        uniformType: "float",
+        uniformType: { type: "float", length: 1 },
         min: 0,
         max: 10,
         step: 0.01,
@@ -96,7 +108,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Seed",
         uniformName: "seed",
         inputType: "number",
-        uniformType: "float",
+        uniformType: { type: "float", length: 1 },
         step: 0.001,
         defaultValue: { type: "number", value: 0.0 },
       },
@@ -104,7 +116,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Scale",
         uniformName: "scale",
         inputType: "slider",
-        uniformType: "float",
+        uniformType: { type: "float", length: 1 },
         min: 0.001,
         max: 100,
         step: 0.01,
@@ -114,7 +126,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Octave weight relation",
         uniformName: "octave_weight_relation",
         inputType: "slider",
-        uniformType: "float",
+        uniformType: { type: "float", length: 1 },
         min: 0.001,
         max: 2.0,
         step: 0.001,
@@ -124,7 +136,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Octaves",
         uniformName: "octaves",
         inputType: "slider",
-        uniformType: "uint",
+        uniformType: { type: "uint", length: 1 },
         min: 1,
         max: 8,
         step: 1,
@@ -152,7 +164,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Strength",
         uniformName: "strength",
         inputType: "slider",
-        uniformType: "float",
+        uniformType: { type: "float", length: 1 },
         min: 0.001,
         max: 1.0,
         step: 0.001,
@@ -195,8 +207,25 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Color",
         uniformName: "color",
         inputType: "color",
-        uniformType: "vec4",
+        uniformType: { type: "vec4", length: 1 },
         defaultValue: { type: "number4", value: [1.0, 1.0, 1.0, 1.0] },
+      },
+    ],
+    inputs: [],
+  }],
+  ["colorize", {
+    name: "Colorize",
+    template: preprocessTemplate(`
+      vec2 uv = $UV;
+      $OUT = $color[0];
+    `),
+    parameters: [
+      {
+        name: "Color",
+        uniformName: "color",
+        inputType: "colorarray",
+        uniformType: { type: "vec4", length: 16 },
+        defaultValue: { type: "number4array", value: [[0, 1, 0, 1], [1.0, 0.0, 1.0, 1.0]] },
       },
     ],
     inputs: [],

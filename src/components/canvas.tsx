@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import glslUtils from "@/shaders/utils.glsl";
 import { BaseNodeParameterDefinition } from "@/nodes/store";
 import { BaseNodeParameterValue } from "@/nodes/definitions";
+import { profile } from "console";
 
 const vsSrc = `#version 300 es
 precision highp float;
@@ -109,7 +110,8 @@ function Canvas({
       const uniqueKey = `${id}|${uniformName}`;
       if (uniqueParameters.has(uniqueKey)) return;
       uniqueParameters.add(uniqueKey);
-      return `uniform ${uniformType} ${id}_${uniformName};`;
+      const arrayString = uniformType.length === 1 ? "" : `[${uniformType.length}]`;
+      return `uniform ${uniformType.type} ${id}_${uniformName}${arrayString};`;
     }).join("\n")
 
     const finalFsSrc = fsSrc
@@ -153,7 +155,12 @@ function Canvas({
       }
 
       const value = values[i];
-      switch (uniformType) {
+      // TODO: Find a better way for this: we need separate arrays for
+      // parameters an values to only recompile shaders when parameters change
+      // but not when values do. Maybe we could merge parameters and values an
+      // deriving here while comparing with useCustomComparison to get stable
+      // references.
+      switch (uniformType.type) {
         case "float":
           if (value.type !== 'number') {
             console.log(value);
@@ -162,11 +169,18 @@ function Canvas({
           gl.uniform1f(location, value.value);
           break;
         case "vec4":
-          if (value.type !== 'number4') {
+          if (value.type === "number4") {
+            gl.uniform4f(location, ...value.value);
+          } else if (value.type === "number4array") {
+            for (let i = 0; i < value.value.length; i++) {
+              const loc = gl.getUniformLocation(program, `${id}_${uniformName}[${i}]`);
+              if (loc === null) throw new Error("Out of array");
+              gl.uniform4f(loc, ...value.value[i]);
+            }
+          } else {
             console.log(value);
             throw new Error(`Invalid value type (${value.type}) for uniform type (${uniformType})`);
           }
-          gl.uniform4f(location, ...value.value);
           break;
         case "uint":
           if (value.type !== 'number') {
@@ -175,8 +189,6 @@ function Canvas({
           }
           gl.uniform1ui(location, value.value);
           break;
-        default:
-          throw new Error(`Unform type: \`${uniformType}\` invalid or not implemented.`)
       }
     });
 

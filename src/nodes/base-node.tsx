@@ -103,6 +103,18 @@ function BaseNode(props: NodeProps) {
         </div>
       );
     }
+    
+    if (param.inputType === "colorarray") {
+      const ownValue = ownValues[i];
+      if (ownValue.type !== param.defaultValue.type)
+        throw new Error("Invalid type in ownValues");
+
+      return (
+        <div key={param.name}>
+          <label className="block text-left" htmlFor="seed">{param.name}</label>
+        </div>
+      );
+    }
 
     param satisfies never;
   });
