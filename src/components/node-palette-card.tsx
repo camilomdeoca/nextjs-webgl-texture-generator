@@ -3,7 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import Canvas from "./canvas";
 import {CSS} from '@dnd-kit/utilities';
-import { BaseNodeParameterDefinition, BaseNodeParameterValue } from "@/nodes/store";
+import { BaseNodeParameterDefinition } from "@/nodes/store";
 
 type NodeCardParameters = {
   id: string,
@@ -12,7 +12,6 @@ type NodeCardParameters = {
   name: string,
   shaderTemplate?: string,
   parameters?: BaseNodeParameterDefinition[],
-  values?: BaseNodeParameterValue[],
 };
 
 export function NodePaletteCard({
@@ -22,7 +21,6 @@ export function NodePaletteCard({
   name,
   shaderTemplate,
   parameters,
-  values,
 }: NodeCardParameters) {
   const {attributes, listeners, setNodeRef, transform, isDragging} = useDraggable({
     id,
@@ -48,7 +46,6 @@ export function NodePaletteCard({
         className="border border-neutral-700 rounded-sm"
         shaderTemplate={shaderTemplate}
         parameters={parameters}
-        values={values}
       />
       <div className="text-sm font-normal pt-1 text-center">
         {name}

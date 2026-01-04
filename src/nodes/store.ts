@@ -12,13 +12,16 @@ import {
   Node,
 } from '@xyflow/react';
 import { DragEndEvent } from '@dnd-kit/core';
-import { BaseNodeParameterValue, nodeDefinitions, Parameter } from './definitions';
+import { nodeDefinitions, Parameter } from './definitions';
 import { buildFinalTemplate } from '@/glsl-parsing/glsl-templates';
 import { allDefined } from '@/utils/lists';
 import { create } from 'zustand';
 import { useRef } from 'react';
+import { DistributivePick, distributivePick } from '@/utils/types';
 
-export type BaseNodeParameterDefinition = Omit<Parameter, "defaultValue"> & { id: string };
+export type BaseNodeParameterDefinition = Parameter & { id: string };
+
+type ParameterValue = DistributivePick<Parameter, "inputType" | "value">;
 
 type SerializableState = {
   nodes: Node[];
@@ -26,7 +29,7 @@ type SerializableState = {
   viewport: Viewport;
 
   inputNodes: [string, string[]][];
-  ownValues: [string, BaseNodeParameterValue[]][];
+  values: [string, ParameterValue[]][];
   templates: [string, string][];
   types: [string, string][];
 };
@@ -39,7 +42,7 @@ type State = {
 
   // Input nodes ids (including indirect inputs)
   inputNodes: Map<string, Set<string>>;
-  ownValues: Map<string, BaseNodeParameterValue[]>;
+  values: Map<string, ParameterValue[]>;
   templates: Map<string, string>;
   types: Map<string, string>;
 };
@@ -47,7 +50,7 @@ type State = {
 type Actions = {
   updateTemplatesFromNode: (id: string) => void;
   updateInputNodesFromNode: (id: string) => void;
-  setNodeValue: (id: string, paramIdx: number, value: BaseNodeParameterValue) => void;
+  setNodeValue: (id: string, paramIdx: number, value: ParameterValue) => void;
 
   onConnect: OnConnect;
 
@@ -90,7 +93,7 @@ function isSerializableState(flow: unknown): flow is SerializableState {
   if (!("nodes" in flow) || !Array.isArray(flow.nodes)) return false;
   if (!("edges" in flow) || !Array.isArray(flow.edges)) return false;
   if (!("inputNodes" in flow) || !Array.isArray(flow.inputNodes)) return false;
-  if (!("ownValues" in flow) || !Array.isArray(flow.ownValues)) return false;
+  if (!("values" in flow) || !Array.isArray(flow.values)) return false;
   if (!("templates" in flow) || !Array.isArray(flow.templates)) return false;
   if (!("types" in flow) || !Array.isArray(flow.types)) return false;
   if (!("edges" in flow) || !Array.isArray(flow.edges)) return false;
@@ -119,7 +122,7 @@ function serializableStateFromState(state: State & Actions): SerializableState {
         ([id, inputs]) => [id, inputs.values().toArray()]
       )
       .toArray(),
-    ownValues: state.ownValues.entries().toArray(),
+    values: state.values.entries().toArray(),
     templates: state.templates.entries().toArray(),
     types: state.types.entries().toArray(),
   };
@@ -141,48 +144,36 @@ export function getParametersFromNode(
   const inputNodes = state.inputNodes.get(id);
   if (!inputNodes) return undefined;
   
-  const parameters = [...inputNodes.values(), id].flatMap(inputId => {
-    const inputType = state.types.get(inputId);
-    if (!inputType) throw new Error(`node ${inputId} isn't in types map.`);
+  const parameters = [...inputNodes.values(), id].flatMap(inputNodeId => {
+    const inputNodeType = state.types.get(inputNodeId);
+    if (!inputNodeType) throw new Error(`node ${inputNodeId} isn't in types map.`);
 
-    const definition = nodeDefinitions.get(inputType);
-    if (!definition) throw new Error(`node ${inputId} has invalid type: ${inputType}.`);
+    const definition = nodeDefinitions.get(inputNodeType);
+    if (!definition) throw new Error(`node ${inputNodeId} has invalid type: ${inputNodeType}.`);
+    
+    return definition.parameters.map<BaseNodeParameterDefinition>(param => {
+      const paramIdx = definition.parameters.findIndex(paramDef => paramDef.uniformName === param.uniformName);
+      if (paramIdx < 0) throw new Error(`There is no ${param.uniformName} in type: ${inputNodeType}`);
 
-    return definition.parameters.map(param => {
-      return {
-        name: param.name,
-        id: inputId,
-        uniformName: param.uniformName,
-        uniformType: param.uniformType,
+      const value = state.values.get(inputNodeId)?.[paramIdx];
+      if (!value) throw new Error(`No value for parameter ${param.uniformName} in node ${inputNodeId}`);
+      
+      if (param.inputType !== value.inputType)
+        throw new Error(`Invalid value type: ${typeof value} for parameter type: ${param.inputType}`);
+
+      return ({
+        id: inputNodeId,
         inputType: param.inputType,
-      }
+        uniformType: param.uniformType,
+        value: value.value,
+        name: param.name,
+        uniformName: param.uniformName,
+        settings: param.settings,
+      } as BaseNodeParameterDefinition) // TODO: try to do this without a cast
     });
   });
 
   return parameters;
-}
-
-export function getValuesForParameters(
-  state: State & Actions,
-  parameters: BaseNodeParameterDefinition[],
-): BaseNodeParameterValue[] | undefined {
-  const values = parameters.map(param => {
-    const nodeType = state.types.get(param.id);
-    if (!nodeType) return undefined;
-
-    const definition = nodeDefinitions.get(nodeType);
-    if (!definition) throw new Error(`node ${param.id} has invalid type: ${nodeType}.`);
-
-    const paramIdx = definition.parameters.findIndex(paramDef => paramDef.uniformName === param.uniformName);
-    if (paramIdx < 0) throw new Error(`There is no ${param.uniformName} in type: ${nodeType}`);
-
-    const value = state.ownValues.get(param.id)?.[paramIdx];
-    if (!value) throw new Error(`No value for parameter ${param.uniformName} in node ${param.id}`);
-
-    return value;
-  });
-  if (!allDefined(values)) return undefined;
-  return values;
 }
 
 // this is our useStore hook that we can use in our components to get parts of the store and call actions
@@ -193,7 +184,7 @@ const useStore = create<State & Actions>((set, get) => ({
   rfInstance: null,
 
   inputNodes: new Map(),
-  ownValues: new Map(),
+  values: new Map(),
   templates: new Map(),
   types: new Map(),
 
@@ -288,17 +279,18 @@ const useStore = create<State & Actions>((set, get) => ({
     }
   },
 
-  setNodeValue: (id: string, paramIdx: number, value: BaseNodeParameterValue) => {
-    const prevOwnValues = get().ownValues.get(id);
-    if (!prevOwnValues) throw new Error(`Node ${id} doesn't have own values.`);
+  // TODO: Try using a update function to not pass the ParameterValue object
+  setNodeValue: (id: string, paramIdx: number, value: ParameterValue) => {
+    const prevValues = get().values.get(id);
+    if (!prevValues) throw new Error(`Node ${id} doesn't have own values.`);
 
-    const newOwnValues = new Map(get().ownValues.entries());
+    const newValues = new Map(get().values.entries());
     
-    const newOwnValuesForThisNode = [...prevOwnValues];
+    const newOwnValuesForThisNode = [...prevValues];
     newOwnValuesForThisNode[paramIdx] = value;
-    newOwnValues.set(id, newOwnValuesForThisNode);
+    newValues.set(id, newOwnValuesForThisNode);
 
-    set({ ownValues: newOwnValues });
+    set({ values: newValues });
   },
   
   onConnect: (connection) => {
@@ -317,7 +309,7 @@ const useStore = create<State & Actions>((set, get) => ({
     for (const change of changes) {
       if (change.type === "remove") {
         get().types.delete(change.id);
-        get().ownValues.delete(change.id);
+        get().values.delete(change.id);
       }
     }
   },
@@ -373,7 +365,7 @@ const useStore = create<State & Actions>((set, get) => ({
       edges: serializableState.edges,
       viewport: serializableState.viewport,
       inputNodes: new Map(serializableState.inputNodes.map(([id, inputs]) => [id, new Set(inputs)])),
-      ownValues: new Map(serializableState.ownValues),
+      values: new Map(serializableState.values),
       templates: new Map(serializableState.templates),
       types: new Map(serializableState.types),
     });
@@ -450,14 +442,14 @@ const useStore = create<State & Actions>((set, get) => ({
         type: "baseNode",
       };
 
-      const newOwnValues = new Map(get().ownValues.entries());
-      newOwnValues.set(generatedId, definition.parameters.map(p => p.defaultValue));
+      const newValues = new Map(get().values.entries());
+      newValues.set(generatedId, definition.parameters.map(p => distributivePick(p, ["inputType", "value"])));
 
       const newTypes = new Map(get().types.entries());
       newTypes.set(generatedId, event.active.data.current.nodeTypeKey);
 
       set({
-        ownValues: newOwnValues,
+        values: newValues,
         types: newTypes,
       })
 

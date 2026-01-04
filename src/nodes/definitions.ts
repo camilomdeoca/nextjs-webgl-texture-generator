@@ -1,51 +1,46 @@
 import { preprocessTemplate } from "@/glsl-parsing/glsl-templates";
 
-export type BaseNodeParameterValue = NumberValue | Number4Value | Number4ArrayValue;
-
-type NumberValue = {
-  type: "number",
-  value: number,
-};
-
-type Number4Value = {
-  type: "number4",
-  value: [number, number, number, number],
-};
-
-type Number4ArrayValue = {
-  type: "number4array",
-  value: [number, number, number, number][],
-};
-
 type SliderParameter = {
   inputType: "slider",
-  uniformType: { type: "float" | "uint", length: 1 },
-  min: number,
-  max: number,
-  step: number,
+  uniformType: { type: "float" | "uint", array: false },
+  value: number,
+
+  settings: {
+    min: number,
+    max: number,
+    step: number,
+  },
 };
 
 type NumberParameter = {
   inputType: "number",
-  uniformType: { type: "float", length: 1 },
-  step: number,
+  uniformType: { type: "float", array: false },
+  value: number,
+
+  settings: {
+    step: number,
+  },
 };
 
 type ColorParameter = {
   inputType: "color",
-  uniformType: { type: "vec4", length: 1 },
+  uniformType: { type: "vec4", array: false },
+  value: [number, number, number, number],
+  settings: Record<never, never>,
 };
 
 type ColorArrayParameter = {
   inputType: "colorarray",
-  uniformType: { type: "vec4", length: number},
+  uniformType: { type: "vec4", array: true, length: number},
+  value: [number, number, number, number][],
+  settings: Record<never, never>,
 };
 
 export type Parameter = (
-  | SliderParameter & { defaultValue: NumberValue }
-  | NumberParameter & { defaultValue: NumberValue }
-  | ColorParameter & { defaultValue: Number4Value }
-  | ColorArrayParameter & { defaultValue: Number4ArrayValue }
+  | SliderParameter
+  | NumberParameter
+  | ColorParameter
+  | ColorArrayParameter
 ) & {
   name: string,
   uniformName: string,
@@ -76,11 +71,13 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Brightness",
         uniformName: "brightness",
         inputType: "slider",
-        uniformType: { type: "float", length: 1 },
-        min: 0,
-        max: 10,
-        step: 0.01,
-        defaultValue: { type: "number", value: 1.0 },
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0,
+          max: 10,
+          step: 0.01,
+        },
+        value: 1.0,
       },
     ],
     inputs: [
@@ -108,39 +105,47 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Seed",
         uniformName: "seed",
         inputType: "number",
-        uniformType: { type: "float", length: 1 },
-        step: 0.001,
-        defaultValue: { type: "number", value: 0.0 },
+        uniformType: { type: "float", array: false },
+        settings: {
+          step: 0.001,
+        },
+        value: 0.0,
       },
       {
         name: "Scale",
         uniformName: "scale",
         inputType: "slider",
-        uniformType: { type: "float", length: 1 },
-        min: 0.001,
-        max: 100,
-        step: 0.01,
-        defaultValue: { type: "number", value: 10.0 },
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.001,
+          max: 100,
+          step: 0.01,
+        },
+        value: 10.0,
       },
       {
         name: "Octave weight relation",
         uniformName: "octave_weight_relation",
         inputType: "slider",
-        uniformType: { type: "float", length: 1 },
-        min: 0.001,
-        max: 2.0,
-        step: 0.001,
-        defaultValue: { type: "number", value: 0.5 },
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.001,
+          max: 2.0,
+          step: 0.001,
+        },
+        value: 0.5,
       },
       {
         name: "Octaves",
         uniformName: "octaves",
         inputType: "slider",
-        uniformType: { type: "uint", length: 1 },
-        min: 1,
-        max: 8,
-        step: 1,
-        defaultValue: { type: "number", value: 1.0 },
+        uniformType: { type: "uint", array: false },
+        settings: {
+          min: 1,
+          max: 8,
+          step: 1,
+        },
+        value: 1.0,
       },
     ],
     inputs: [],
@@ -164,11 +169,13 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Strength",
         uniformName: "strength",
         inputType: "slider",
-        uniformType: { type: "float", length: 1 },
-        min: 0.001,
-        max: 1.0,
-        step: 0.001,
-        defaultValue: { type: "number", value: 1.0 },
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.001,
+          max: 1.0,
+          step: 0.001,
+        },
+        value: 1.0,
       },
     ],
     inputs: [
@@ -207,8 +214,9 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Color",
         uniformName: "color",
         inputType: "color",
-        uniformType: { type: "vec4", length: 1 },
-        defaultValue: { type: "number4", value: [1.0, 1.0, 1.0, 1.0] },
+        uniformType: { type: "vec4", array: false },
+        settings: {},
+        value: [1.0, 1.0, 1.0, 1.0],
       },
     ],
     inputs: [],
@@ -224,8 +232,9 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         name: "Color",
         uniformName: "color",
         inputType: "colorarray",
-        uniformType: { type: "vec4", length: 16 },
-        defaultValue: { type: "number4array", value: [[0, 1, 0, 1], [1.0, 0.0, 1.0, 1.0]] },
+        uniformType: { type: "vec4", array: true, length: 16 },
+        settings: {},
+        value: [[0, 1, 0, 1], [1.0, 0.0, 1.0, 1.0]],
       },
     ],
     inputs: [],

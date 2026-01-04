@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import glslUtils from "@/shaders/utils.glsl";
 import { BaseNodeParameterDefinition } from "@/nodes/store";
-import { BaseNodeParameterValue } from "@/nodes/definitions";
-import { profile } from "console";
 
 const vsSrc = `#version 300 es
 precision highp float;
@@ -77,58 +75,56 @@ function Canvas({
   className,
   shaderTemplate,
   parameters,
-  values,
 }: {
   className?: string,
   shaderTemplate?: string,
   parameters?: BaseNodeParameterDefinition[],
-  values?: BaseNodeParameterValue[],
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [program, setProgram] = useState<WebGLProgram | null>(null);
   const [src, setSrc] = useState<string | null>(null);
 
   // Reconstruct shader when connected nodes change
-  useEffect(() => {
-    console.log("RECONSTRUCT SHADER" /*, shaderTemplate, parameters*/);
-    const canvas = canvasRef.current;
-    if (canvas === null) throw new Error("Couldn't get canvas reference.");
-    const gl = canvas.getContext('webgl2');
-    if (gl === null) throw new Error("Couldn't get webgl context.");
+  useEffect(
+    () => {
+      console.log("RECONSTRUCT SHADER" /*, shaderTemplate, parameters*/);
+      const canvas = canvasRef.current;
+      if (canvas === null) throw new Error("Couldn't get canvas reference.");
+      const gl = canvas.getContext('webgl2');
+      if (gl === null) throw new Error("Couldn't get webgl context.");
 
-    if (shaderTemplate === undefined || parameters === undefined) {
-      return;
-    }
+      if (shaderTemplate === undefined || parameters === undefined) {
+        return;
+      }
 
-    // TODO: instead of removing duplicates here try to have a set of input
-    // nodes for each node (the indirect input nodes would also be there) and
-    // the duplicates would be removed for being a set. The values would be
-    // obtained from the ownValues of each node in that set (wouldnt need the
-    // values array anymore)
-    const uniqueParameters = new Set();
-    const uniformsSrc = parameters.map(({ id, uniformName, uniformType }) => {
-      const uniqueKey = `${id}|${uniformName}`;
-      if (uniqueParameters.has(uniqueKey)) return;
-      uniqueParameters.add(uniqueKey);
-      const arrayString = uniformType.length === 1 ? "" : `[${uniformType.length}]`;
-      return `uniform ${uniformType.type} ${id}_${uniformName}${arrayString};`;
-    }).join("\n")
+      const uniqueParameters = new Set();
+      const uniformsSrc = parameters.map(({ id, uniformName, uniformType }) => {
+        const uniqueKey = `${id}|${uniformName}`;
+        if (uniqueParameters.has(uniqueKey)) return;
+        uniqueParameters.add(uniqueKey);
+        const arrayString = uniformType.array ? `[${uniformType.length}]` : "";
+        return `uniform ${uniformType.type} ${id}_${uniformName}${arrayString};`;
+      }).join("\n")
 
-    const finalFsSrc = fsSrc
-      .replace(
-        "$INSIDE",
-        shaderTemplate
-          .replaceAll("$UV", "fragCoord")
-          .replaceAll("$OUT", "fragColor"),
-      )
-      .replace(
-        "$UNIFORMS",
-        uniformsSrc,
-      );
+      const finalFsSrc = fsSrc
+        .replace(
+          "$INSIDE",
+          shaderTemplate
+            .replaceAll("$UV", "fragCoord")
+            .replaceAll("$OUT", "fragColor"),
+        )
+        .replace(
+          "$UNIFORMS",
+          uniformsSrc,
+        );
 
-    setProgram(() => createProgram(gl, vsSrc, finalFsSrc));
-    setSrc(() => finalFsSrc);
-  }, [shaderTemplate, parameters]);
+      setProgram(() => createProgram(gl, vsSrc, finalFsSrc));
+      setSrc(() => finalFsSrc);
+    },
+    // This should be enough because when the parameters change the template changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [shaderTemplate],
+  );
 
   useEffect(() => {
     console.log("RE-RENDER"/*, program, shaderTemplate, parameters, values*/);
@@ -138,7 +134,7 @@ function Canvas({
     if (gl === null) throw new Error("Couldn't get webgl context.");
 
     // Clear the canvas if a node gets disconected or something
-    if (program === null || shaderTemplate === undefined || parameters === undefined || values === undefined) {
+    if (program === null || shaderTemplate === undefined || parameters === undefined) {
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       return;
@@ -146,48 +142,36 @@ function Canvas({
 
     gl.useProgram(program);
 
-    parameters.forEach(({ id, uniformName, uniformType }, i) => {
-      const location = gl.getUniformLocation(program, `${id}_${uniformName}`);
+    parameters.forEach((param) => {
+      const location = gl.getUniformLocation(program, `${param.id}_${param.uniformName}`);
       if (location === null) {
         // If we are here its because the parameters useEffect updated first
         // and then before the finalTemplate updated the canvas updated
         return;
       }
 
-      const value = values[i];
-      // TODO: Find a better way for this: we need separate arrays for
-      // parameters an values to only recompile shaders when parameters change
-      // but not when values do. Maybe we could merge parameters and values an
-      // deriving here while comparing with useCustomComparison to get stable
-      // references.
-      switch (uniformType.type) {
-        case "float":
-          if (value.type !== 'number') {
-            console.log(value);
-            throw new Error(`Invalid value type (${value.type}) for uniform type (${uniformType})`);
-          }
-          gl.uniform1f(location, value.value);
-          break;
-        case "vec4":
-          if (value.type === "number4") {
-            gl.uniform4f(location, ...value.value);
-          } else if (value.type === "number4array") {
-            for (let i = 0; i < value.value.length; i++) {
-              const loc = gl.getUniformLocation(program, `${id}_${uniformName}[${i}]`);
-              if (loc === null) throw new Error("Out of array");
-              gl.uniform4f(loc, ...value.value[i]);
-            }
-          } else {
-            console.log(value);
-            throw new Error(`Invalid value type (${value.type}) for uniform type (${uniformType})`);
+      switch (param.inputType) {
+        case "number":
+        case "slider":
+          switch (param.uniformType.type) {
+            case "float":
+              gl.uniform1f(location, param.value);
+              break;
+            case "uint":
+              gl.uniform1ui(location, param.value);
+              break;
           }
           break;
-        case "uint":
-          if (value.type !== 'number') {
-            console.log(value);
-            throw new Error(`Invalid value type (${value.type}) for uniform type (${uniformType})`);
+        case "color":
+          console.log(param);
+          gl.uniform4f(location, ...param.value);
+          break;
+        case "colorarray":
+          for (let i = 0; i < param.value.length; i++) {
+            const loc = gl.getUniformLocation(program, `${param.id}_${param.uniformName}[${i}]`);
+            if (loc === null) throw new Error("Out of array");
+            gl.uniform4f(loc, ...param.value[i]);
           }
-          gl.uniform1ui(location, value.value);
           break;
       }
     });
@@ -197,7 +181,7 @@ function Canvas({
 
     gl.viewport(0, 0, previewSize, previewSize);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }, [shaderTemplate, parameters, program, src, values]);
+  }, [shaderTemplate, parameters, program, src]);
 
   return (
     <canvas

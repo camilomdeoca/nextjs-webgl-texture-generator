@@ -15,16 +15,16 @@ function BaseNode(props: NodeProps) {
   const definition = nodeDefinitions.get(type);
   if (!definition) throw new Error(`Invalid type: ${type}`);
 
-  const ownValues = useStore(useShallow(state => state.ownValues.get(id)));
-  if (!ownValues) throw new Error(`Node ${id} doesnt have its own values.`);
+  const values = useStore(useShallow(state => state.values.get(id)));
+  if (!values) throw new Error(`Node ${id} doesnt have its own values.`);
   const setNodeValue = useStore(state => state.setNodeValue);
 
   const inputs = definition.parameters.map((param, i) => {
     if (param.inputType === "number") {
-      const ownValue = ownValues[i];
-      if (ownValue.type !== param.defaultValue.type) {
-        console.log("own", ownValue)
-        console.log("default", param.defaultValue);
+      const value = values[i];
+      if (value.inputType !== param.inputType) {
+        console.log("own", value)
+        console.log("default", param.value);
         throw new Error("Invalid type in ownValues");
       }
 
@@ -35,25 +35,26 @@ function BaseNode(props: NodeProps) {
             className="w-full nodrag"
             id="seed"
             type="number"
-            step={param.step}
+            step={param.settings.step}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setNodeValue(
               id,
               i,
               {
-                type: param.defaultValue.type,
-                value: parseFloat(e.target.value) ?? param.defaultValue.value,
+                inputType: param.inputType,
+                value: parseFloat(e.target.value) ?? param.value,
               },
             )}
-            value={ownValue.value}
+            value={value.value}
           />
         </div>
       );
     }
 
     if (param.inputType === "slider") {
-      const ownValue = ownValues[i];
-      if (ownValue.type !== param.defaultValue.type)
+      const value = values[i];
+      if (value.inputType !== param.inputType) {
         throw new Error("Invalid type in ownValues");
+      }
 
       return (
         <div key={param.name}>
@@ -62,27 +63,28 @@ function BaseNode(props: NodeProps) {
             className="w-full nodrag accent-neutral-400"
             id="seed"
             type="range"
-            min={param.min}
-            max={param.max}
-            step={param.step}
+            min={param.settings.min}
+            max={param.settings.max}
+            step={param.settings.step}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setNodeValue(
               id,
               i,
               {
-                type: param.defaultValue.type,
-                value: parseFloat(e.target.value) ?? param.defaultValue.value,
+                inputType: param.inputType,
+                value: parseFloat(e.target.value) ?? param.value,
               },
             )}
-            value={ownValue.value}
+            value={value.value}
           />
         </div>
       );
     }
     
     if (param.inputType === "color") {
-      const ownValue = ownValues[i];
-      if (ownValue.type !== param.defaultValue.type)
+      const value = values[i];
+      if (value.inputType !== param.inputType) {
         throw new Error("Invalid type in ownValues");
+      }
 
       return (
         <div key={param.name}>
@@ -94,20 +96,21 @@ function BaseNode(props: NodeProps) {
               id,
               i,
               {
-                type: param.defaultValue.type,
-                value: color ?? param.defaultValue.value,
+                inputType: param.inputType,
+                value: color ?? param.value,
               },
             )}
-            value={ownValue.value}
+            value={value.value}
           />
         </div>
       );
     }
     
     if (param.inputType === "colorarray") {
-      const ownValue = ownValues[i];
-      if (ownValue.type !== param.defaultValue.type)
+      const value = values[i];
+      if (value.inputType !== param.inputType) {
         throw new Error("Invalid type in ownValues");
+      }
 
       return (
         <div key={param.name}>

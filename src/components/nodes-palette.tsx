@@ -22,16 +22,11 @@ export default function NodesPalette({
           parameters: undefined,
         };
       }
-      const definitions = parameters.map(({ name, uniformName, uniformType, inputType }) => ({
-        name,
+      const definitions = parameters.map((param) => ({
         id: "",
-        uniformName,
-        uniformType,
-        inputType,
+        ...param,
       }))
       
-      const values = parameters.map(({ defaultValue }) => { return defaultValue; });
-
       const templateProcessed = prependUniformVariablesWithId(
         "",
         template,
@@ -43,7 +38,6 @@ export default function NodesPalette({
         name, 
         template: templateProcessed,
         parameters: definitions,
-        values,
       };
     }).toArray();
 
@@ -59,7 +53,7 @@ export default function NodesPalette({
         ${className}
       `}
     >
-      {data.map(({ key, name, template, parameters, values }) => (
+      {data.map(({ key, name, template, parameters }) => (
         <NodePaletteCard
           id={`${key}_palette_card`}
           key={key}
@@ -67,7 +61,6 @@ export default function NodesPalette({
           name={name}
           shaderTemplate={template}
           parameters={parameters}
-          values={values}
         />
       ))}
     </div>
