@@ -5,6 +5,7 @@ import { nodeDefinitions } from "./definitions";
 import useStore from "./store";
 import { useShallow } from "zustand/shallow";
 import { ColorPicker } from "@/components/color-picker";
+import { ColorControlPointsInput } from "@/components/color-control-points-input";
 
 function BaseNode(props: NodeProps) {
   const id = props.id;
@@ -79,7 +80,7 @@ function BaseNode(props: NodeProps) {
         </div>
       );
     }
-    
+
     if (param.inputType === "color") {
       const value = values[i];
       if (value.inputType !== param.inputType) {
@@ -105,7 +106,7 @@ function BaseNode(props: NodeProps) {
         </div>
       );
     }
-    
+
     if (param.inputType === "colorarray") {
       const value = values[i];
       if (value.inputType !== param.inputType) {
@@ -115,6 +116,25 @@ function BaseNode(props: NodeProps) {
       return (
         <div key={param.name}>
           <label className="block text-left" htmlFor="seed">{param.name}</label>
+          <ColorControlPointsInput
+            values={[
+              {
+                color: [1, 0, 0, 1],
+                lightness: 0.0,
+              },
+              {
+                color: [0, 1, 0, 1],
+                lightness: 0.5,
+              },
+              {
+                color: [0, 0, 1, 1],
+                lightness: 1.0,
+              },
+            ]}
+            onChange={() => {
+              console.log("CHANGE");
+            }}
+          />
         </div>
       );
     }
