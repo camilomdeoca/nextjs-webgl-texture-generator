@@ -24,9 +24,9 @@ precision highp float;
 in vec2 uv;
 out vec4 outColor;
 
-$UNIFORMS
-
 ${glslUtils}
+
+$UNIFORMS
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   $INSIDE
@@ -87,7 +87,7 @@ function Canvas({
   // Reconstruct shader when connected nodes change
   useEffect(
     () => {
-      console.log("RECONSTRUCT SHADER" /*, shaderTemplate, parameters*/);
+      if (process.env.NODE_ENV === "development") console.log("COMPILE SHADER");
       const canvas = canvasRef.current;
       if (canvas === null) throw new Error("Couldn't get canvas reference.");
       const gl = canvas.getContext('webgl2');
@@ -103,7 +103,10 @@ function Canvas({
         if (uniqueParameters.has(uniqueKey)) return;
         uniqueParameters.add(uniqueKey);
         const arrayString = uniformType.array ? `[${uniformType.length}]` : "";
-        return `uniform ${uniformType.type} ${id}_${uniformName}${arrayString};`;
+        const dynamicArrayLengthString = uniformType.array && uniformType.dynamic
+          ? `\nuniform int ${id}_${uniformName}_count;`
+          : "";
+        return `uniform ${uniformType.type} ${id}_${uniformName}${arrayString};${dynamicArrayLengthString}`;
       }).join("\n")
 
       const finalFsSrc = fsSrc
@@ -127,7 +130,7 @@ function Canvas({
   );
 
   useEffect(() => {
-    console.log("RE-RENDER"/*, program, shaderTemplate, parameters, values*/);
+    if (process.env.NODE_ENV === "development") console.log("RE-RENDER");
     const canvas = canvasRef.current;
     if (canvas === null) throw new Error("Couldn't get canvas reference.");
     const gl = canvas.getContext('webgl2');
@@ -143,16 +146,19 @@ function Canvas({
     gl.useProgram(program);
 
     parameters.forEach((param) => {
-      const location = gl.getUniformLocation(program, `${param.id}_${param.uniformName}`);
-      if (location === null) {
-        // If we are here its because the parameters useEffect updated first
-        // and then before the finalTemplate updated the canvas updated
-        return;
-      }
+      // const location = gl.getUniformLocation(program, `${param.id}_${param.uniformName}`);
+      // if (location === null) {
+      //   // If we are here its because the parameters useEffect updated first
+      //   // and then before the finalTemplate updated the canvas updated
+      //   return;
+      // }
+
 
       switch (param.inputType) {
         case "number":
         case "slider":
+        {
+          const location = gl.getUniformLocation(program, `${param.id}_${param.uniformName}`);
           switch (param.uniformType.type) {
             case "float":
               gl.uniform1f(location, param.value);
@@ -162,17 +168,38 @@ function Canvas({
               break;
           }
           break;
+        }
         case "color":
-          console.log(param);
+        {
+          const location = gl.getUniformLocation(program, `${param.id}_${param.uniformName}`);
+          if (!location) console.warn("Couldn't find variable location.");
           gl.uniform4f(location, ...param.value);
           break;
-        case "colorarray":
+        }
+        case "colorcontrolpointarray":
+        {
+          if (param.value.length > param.uniformType.length)
+            throw new Error(`Too many control points. (max is ${param.uniformType.length})`);
+
+          const locLength = gl.getUniformLocation(program, `${param.id}_${param.uniformName}_count`);
+          gl.uniform1i(locLength, param.value.length);
+
           for (let i = 0; i < param.value.length; i++) {
-            const loc = gl.getUniformLocation(program, `${param.id}_${param.uniformName}[${i}]`);
-            if (loc === null) throw new Error("Out of array");
-            gl.uniform4f(loc, ...param.value[i]);
+            const colorUniformName = `${param.id}_${param.uniformName}[${i}].color`;
+            const locColor = gl.getUniformLocation(program, colorUniformName);
+            const lightnessUniformName = `${param.id}_${param.uniformName}[${i}].lightness`;
+            const locLightness = gl.getUniformLocation(program, lightnessUniformName);
+
+            if (!locColor)
+              throw new Error(`Couldn't get color location on idx: ${i}. \`${colorUniformName}\`.`);
+            if (!locLightness)
+              throw new Error(`Couldn't get lightness location on idx: ${i}. \`${lightnessUniformName}\`.`);
+
+            gl.uniform4f(locColor, ...param.value[i].color);
+            gl.uniform1f(locLightness, param.value[i].lightness);
           }
           break;
+        }
       }
     });
 

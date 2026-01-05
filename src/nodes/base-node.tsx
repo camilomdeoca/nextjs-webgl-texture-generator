@@ -107,7 +107,7 @@ function BaseNode(props: NodeProps) {
       );
     }
 
-    if (param.inputType === "colorarray") {
+    if (param.inputType === "colorcontrolpointarray") {
       const value = values[i];
       if (value.inputType !== param.inputType) {
         throw new Error("Invalid type in ownValues");
@@ -117,22 +117,17 @@ function BaseNode(props: NodeProps) {
         <div key={param.name}>
           <label className="block text-left" htmlFor="seed">{param.name}</label>
           <ColorControlPointsInput
-            values={[
-              {
-                color: [1, 0, 0, 1],
-                lightness: 0.0,
-              },
-              {
-                color: [0, 1, 0, 1],
-                lightness: 0.5,
-              },
-              {
-                color: [0, 0, 1, 1],
-                lightness: 1.0,
-              },
-            ]}
-            onChange={() => {
-              console.log("CHANGE");
+            values={value.value}
+            onChange={(newControlPoints) => {
+              // console.log(newControlPoints[0].lightness);
+              setNodeValue(
+                id,
+                i,
+                {
+                  inputType: param.inputType,
+                  value: newControlPoints,
+                },
+              );
             }}
           />
         </div>

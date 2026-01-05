@@ -70,7 +70,7 @@ export function ColorControlPointsInput({
     document.onmouseup = savedOnMouseUp;
     setSavedOnMouseMove(null);
     setSavedOnMouseUp(null);
-    onChange(values.toSorted((a, b) => a.lightness - b.lightness));
+    // onChange(values.toSorted((a, b) => a.lightness - b.lightness));
   };
 
   const makeMouseMoveHandler = (controlPointIdx: number) => (ev: MouseEvent) => {
@@ -149,7 +149,6 @@ export function ColorControlPointsInput({
                 setSavedOnMouseUp(document.onmouseup);
                 document.onmousemove = makeMouseMoveHandler(i);
                 document.onmouseup = handleMouseUp;
-                console.log("START DRAG");
               }}
             >⠿</div>
             <div className="grow min-w-0">

@@ -91,3 +91,8 @@ float simplex3d(vec3 p) {
     /* 3. return the sum of the four surflets */
     return dot(d, vec4(52.0));
 }
+
+struct ColorControlPoint {
+    vec4 color;
+    float lightness;
+};

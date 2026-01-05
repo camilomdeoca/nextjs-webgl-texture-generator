@@ -29,10 +29,13 @@ type ColorParameter = {
   settings: Record<never, never>,
 };
 
-type ColorArrayParameter = {
-  inputType: "colorarray",
-  uniformType: { type: "vec4", array: true, length: number},
-  value: [number, number, number, number][],
+type ColorControlPointArrayParameter = {
+  inputType: "colorcontrolpointarray",
+  uniformType: { type: "ColorControlPoint", array: true, dynamic: true, length: number},
+  value: {
+    color: [number, number, number, number],
+    lightness: number,
+  }[],
   settings: Record<never, never>,
 };
 
@@ -40,7 +43,7 @@ export type Parameter = (
   | SliderParameter
   | NumberParameter
   | ColorParameter
-  | ColorArrayParameter
+  | ColorControlPointArrayParameter
 ) & {
   name: string,
   uniformName: string,
@@ -225,19 +228,47 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
     name: "Colorize",
     template: preprocessTemplate(`
       vec2 uv = $UV;
-      $OUT = $color[0];
+      vec4 inputColor;
+      $INPUT0(inputColor, uv)
+
+      float lightness = inputColor.r; // TODO: get hsl lightness instead
+
+      int closestLower = -1;
+      int closestUpper = -1;
+
+      for (int i = 0; i < $color_count; i++) {
+        if ($color[i].lightness <= lightness && (closestLower < 0 || $color[i].lightness > $color[closestLower].lightness)) closestLower = i;
+        if ($color[i].lightness >= lightness && (closestUpper < 0 || $color[i].lightness < $color[closestUpper].lightness)) closestUpper = i;
+      }
+
+      if (closestLower < 0) $OUT = $color[closestUpper].color;
+      else if (closestUpper < 0) $OUT = $color[closestLower].color;
+      else if ($color[closestLower].lightness == $color[closestUpper].lightness) $OUT = $color[closestLower].color;
+      else {
+        float factor
+          = (lightness - $color[closestLower].lightness)
+          / ($color[closestUpper].lightness - $color[closestLower].lightness);
+
+        $OUT = mix($color[closestLower].color, $color[closestUpper].color, factor);
+      }
     `),
     parameters: [
       {
         name: "Color",
         uniformName: "color",
-        inputType: "colorarray",
-        uniformType: { type: "vec4", array: true, length: 16 },
+        inputType: "colorcontrolpointarray",
+        uniformType: { type: "ColorControlPoint", array: true, dynamic: true, length: 16 },
         settings: {},
-        value: [[0, 1, 0, 1], [1.0, 0.0, 1.0, 1.0]],
+        value: [
+          { color: [1, 0, 0, 1], lightness: 0.0 },
+          { color: [0, 1, 0, 1], lightness: 0.5 },
+          { color: [0, 0, 1, 1], lightness: 1.0 },
+        ],
       },
     ],
-    inputs: [],
+    inputs: [
+      { name: "In", handleId: "in" },
+    ],
   }],
 ]);
 export { nodeDefinitions };
