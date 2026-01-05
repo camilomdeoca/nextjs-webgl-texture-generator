@@ -68,6 +68,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
       $INPUT0(input1, uv1)
       vec3 col = vec3(1.0) - input1.xyz;
       $OUT = vec4(col * $brightness, 1.0);
+      $OUT = clamp($OUT, 0.0, 1.0);
     `),
     parameters: [
       {
@@ -102,6 +103,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         value += simplex3d(vec3($UV, $seed) * $scale * pow(2.0, float(octave_idx))) * weight;
       }
       $OUT = vec4(vec3(value * 0.5 + 0.5), 1.0);
+      $OUT = clamp($OUT, 0.0, 1.0);
     `),
     parameters: [
       {
@@ -166,6 +168,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
       $INPUT1(outputColor, uv)
 
       $OUT = outputColor;
+      $OUT = clamp($OUT, 0.0, 1.0);
     `),
     parameters: [
       {
@@ -198,6 +201,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
       $INPUT2(mask, uv)
 
       $OUT = mix(dark, light, mask.r);
+      $OUT = clamp($OUT, 0.0, 1.0);
     `),
     parameters: [],
     inputs: [
@@ -211,6 +215,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
     template: preprocessTemplate(`
       vec2 uv = $UV;
       $OUT = $color;
+      $OUT = clamp($OUT, 0.0, 1.0);
     `),
     parameters: [
       {
@@ -251,6 +256,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
 
         $OUT = mix($color[closestLower].color, $color[closestUpper].color, factor);
       }
+      $OUT = clamp($OUT, 0.0, 1.0);
     `),
     parameters: [
       {
