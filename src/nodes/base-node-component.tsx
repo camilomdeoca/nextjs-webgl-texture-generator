@@ -29,12 +29,11 @@ export function BaseNodeComponent({
         onConnect={(params) => console.log('handle onConnect (input)', params)}
         id={input.handleId}
       />
-      <label
-        htmlFor={input.handleId}
+      <span
         className="text-xs px-2.5"
       >
         {input.name}
-      </label>
+      </span>
     </div>
   ));
 
@@ -47,12 +46,11 @@ export function BaseNodeComponent({
         isConnectable={true}
         id={output.name}
       />
-      <label
-        htmlFor={output.name}
+      <span
         className="text-xs px-2.5"
       >
         {output.name}
-      </label>
+      </span>
     </div>
   ));
 

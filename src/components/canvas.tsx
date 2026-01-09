@@ -146,14 +146,6 @@ function Canvas({
     gl.useProgram(program);
 
     parameters.forEach((param) => {
-      // const location = gl.getUniformLocation(program, `${param.id}_${param.uniformName}`);
-      // if (location === null) {
-      //   // If we are here its because the parameters useEffect updated first
-      //   // and then before the finalTemplate updated the canvas updated
-      //   return;
-      // }
-
-
       switch (param.inputType) {
         case "number":
         case "slider":
@@ -190,10 +182,14 @@ function Canvas({
             const lightnessUniformName = `${param.id}_${param.uniformName}[${i}].lightness`;
             const locLightness = gl.getUniformLocation(program, lightnessUniformName);
 
-            if (!locColor)
+            if (!locColor) {
+              console.log(src);
               throw new Error(`Couldn't get color location on idx: ${i}. \`${colorUniformName}\`.`);
-            if (!locLightness)
+            }
+            if (!locLightness) {
+              console.log(src);
               throw new Error(`Couldn't get lightness location on idx: ${i}. \`${lightnessUniformName}\`.`);
+            }
 
             gl.uniform4f(locColor, ...param.value[i].color);
             gl.uniform1f(locLightness, param.value[i].lightness);

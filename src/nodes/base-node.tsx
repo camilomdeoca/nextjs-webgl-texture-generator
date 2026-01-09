@@ -30,8 +30,8 @@ function BaseNode(props: NodeProps) {
       }
 
       return (
-        <div key={param.name}>
-          <label className="block text-left" htmlFor="seed">{param.name}</label>
+        <label key={param.name}>
+          <span className="block text-left">{param.name}</span>
           <input
             className="w-full nodrag"
             id="seed"
@@ -47,7 +47,7 @@ function BaseNode(props: NodeProps) {
             )}
             value={value.value}
           />
-        </div>
+        </label>
       );
     }
 
@@ -58,8 +58,8 @@ function BaseNode(props: NodeProps) {
       }
 
       return (
-        <div key={param.name}>
-          <label className="block text-left" htmlFor="seed">{param.name}</label>
+        <label key={param.name}>
+          <span className="block text-left nodrag">{param.name}</span>
           <input
             className="w-full nodrag accent-neutral-400"
             id="seed"
@@ -77,7 +77,7 @@ function BaseNode(props: NodeProps) {
             )}
             value={value.value}
           />
-        </div>
+        </label>
       );
     }
 
@@ -88,8 +88,8 @@ function BaseNode(props: NodeProps) {
       }
 
       return (
-        <div key={param.name}>
-          <label className="block text-left" htmlFor="seed">{param.name}</label>
+        <label key={param.name}>
+          <span className="block text-left">{param.name}</span>
           <ColorPicker
             className="w-full nodrag"
             id="seed"
@@ -103,7 +103,7 @@ function BaseNode(props: NodeProps) {
             )}
             value={value.value}
           />
-        </div>
+        </label>
       );
     }
 
@@ -115,7 +115,7 @@ function BaseNode(props: NodeProps) {
 
       return (
         <div key={param.name}>
-          <label className="block text-left" htmlFor="seed">{param.name}</label>
+          <span className="block text-left">{param.name}</span>
           <ColorControlPointsInput
             values={value.value}
             onChange={(newControlPoints) => {
