@@ -60,25 +60,67 @@ export type NodeDefinition = {
 };
 
 const nodeDefinitions = new Map<string, NodeDefinition>([
-  ["invert", {
-    name: "Invert",
+  ["colorcorrection", {
+    name: "Color correction",
     template: preprocessTemplate(`
-      vec4 input1;
-      vec2 uv1 = $UV;
-      $INPUT0(input1, uv1)
-      vec3 col = vec3(1.0) - input1.xyz;
-      $OUT = vec4(col * $brightness, 1.0);
+      vec4 input;
+      vec2 uv = $UV;
+      $INPUT0(input, uv)
+
+      vec3 rgb = (input.rgb - 0.5) * $contrast + 0.5;
+      vec3 hsv = rgb2hsv(rgb);
+      hsv.y *= $saturation;
+      hsv.z *= $brightness;
+      rgb = hsv2rgb(hsv);
+      rgb = pow(rgb, vec3(1.0 / $gamma));
+      $OUT = vec4(rgb, input.a);
       $OUT = clamp($OUT, 0.0, 1.0);
     `),
     parameters: [
+      {
+        name: "Gamma",
+        uniformName: "gamma",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.0,
+          max: 3.0,
+          step: 0.01,
+        },
+        value: 1.0,
+      },
+      {
+        name: "Contrast",
+        uniformName: "contrast",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.0,
+          max: 3.0,
+          step: 0.01,
+        },
+        value: 1.0,
+      },
+      {
+        name: "Saturation",
+        uniformName: "saturation",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.0,
+          max: 3.0,
+          step: 0.01,
+        },
+        value: 1.0,
+      },
       {
         name: "Brightness",
         uniformName: "brightness",
         inputType: "slider",
         uniformType: { type: "float", array: false },
         settings: {
-          min: 0,
-          max: 10,
+          min: 0.0,
+          max: 3.0,
           step: 0.01,
         },
         value: 1.0,
