@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import glslUtils from "@/shaders/utils.glsl";
 import { BaseNodeParameterDefinition } from "@/nodes/store";
+import { hexToRgba } from "@/utils/colors";
 
 const vsSrc = `#version 300 es
 precision highp float;
@@ -165,7 +166,7 @@ function Canvas({
         {
           const location = gl.getUniformLocation(program, `${param.id}_${param.uniformName}`);
           if (!location) console.warn("Couldn't find variable location.");
-          gl.uniform4f(location, ...param.value);
+          gl.uniform4f(location, ...(hexToRgba(param.value) ?? [0, 0, 0, 1]));
           break;
         }
         case "colorcontrolpointarray":
@@ -191,7 +192,7 @@ function Canvas({
               throw new Error(`Couldn't get lightness location on idx: ${i}. \`${lightnessUniformName}\`.`);
             }
 
-            gl.uniform4f(locColor, ...param.value[i].color);
+            gl.uniform4f(locColor, ...(hexToRgba(param.value[i].color) ?? [0, 0, 0, 1]));
             gl.uniform1f(locLightness, param.value[i].lightness);
           }
           break;

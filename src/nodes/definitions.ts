@@ -25,7 +25,7 @@ type NumberParameter = {
 type ColorParameter = {
   inputType: "color",
   uniformType: { type: "vec4", array: false },
-  value: [number, number, number, number],
+  value: string,
   settings: Record<never, never>,
 };
 
@@ -33,7 +33,7 @@ type ColorControlPointArrayParameter = {
   inputType: "colorcontrolpointarray",
   uniformType: { type: "ColorControlPoint", array: true, dynamic: true, length: number},
   value: {
-    color: [number, number, number, number],
+    color: string,
     lightness: number,
   }[],
   settings: Record<never, never>,
@@ -266,7 +266,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         inputType: "color",
         uniformType: { type: "vec4", array: false },
         settings: {},
-        value: [1.0, 1.0, 1.0, 1.0],
+        value: "#ffffff",
       },
     ],
     inputs: [],
@@ -308,9 +308,9 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         uniformType: { type: "ColorControlPoint", array: true, dynamic: true, length: 16 },
         settings: {},
         value: [
-          { color: [1, 0, 0, 1], lightness: 0.0 },
-          { color: [0, 1, 0, 1], lightness: 0.5 },
-          { color: [0, 0, 1, 1], lightness: 1.0 },
+          { color: "#ff0000", lightness: 0.0 },
+          { color: "#00ff00", lightness: 0.5 },
+          { color: "#0000ff", lightness: 1.0 },
         ],
       },
     ],

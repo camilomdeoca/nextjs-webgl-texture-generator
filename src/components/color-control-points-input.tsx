@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ColorPicker } from "./color-picker";
-import { rgbaToHex } from "@/utils/colors";
+import { hexToRgba, rgbaToHex } from "@/utils/colors";
+import { HexColorInput } from "react-colorful";
+import { PopoverColorPicker } from "./popover-color-picker";
 
 export type ColorControlPoint = {
-  color: [number, number, number, number],
+  color: string,
   lightness: number,
 };
 
@@ -16,7 +17,7 @@ type ColorControlPointsInputParams = {
 function getColorAtLightness(
   values: ColorControlPoint[],
   lightness: number,
-): [number, number, number, number] {
+): string | undefined {
   if (values.length === 0) throw new Error("No control points.");
   let closestLower = -1;
   let closestUpper = -1;
@@ -41,12 +42,16 @@ function getColorAtLightness(
     / (values[closestUpper].lightness - values[closestLower].lightness);
 
   const result: [number, number, number, number] = [0, 0, 0, 0];
+  const colorLower = hexToRgba(values[closestLower].color);
+  const colorUpper = hexToRgba(values[closestUpper].color);
+  if (!colorLower) return undefined;
+  if (!colorUpper) return undefined;
   for (let i = 0; i < result.length; i++) {
     result[i]
-      = values[closestLower].color[i] * (1.0 - factor)
-      + values[closestUpper].color[i] * (      factor)
+      = colorLower[i] * (1.0 - factor)
+      + colorUpper[i] * (      factor)
   }
-  return result;
+  return rgbaToHex(result);
 }
 
 export function ColorControlPointsInput({
@@ -102,7 +107,7 @@ export function ColorControlPointsInput({
 
     const gradient = ctx.createLinearGradient(0, h, 0, 0);
     for (const controlPoint of values) {
-      gradient.addColorStop(controlPoint.lightness, rgbaToHex(controlPoint.color));
+      gradient.addColorStop(controlPoint.lightness, controlPoint.color);
     }
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
@@ -117,7 +122,7 @@ export function ColorControlPointsInput({
     >
       {values.map(({ color, lightness }, i) => (
         <div
-          key={`${i}|${color}`}
+          key={i}
           style={{ translate: `0 ${(1.0 - lightness)*9.375}rem` }}
           className={`
             absolute flex flex-row gap-1 w-full p-1 pointer-events-none
@@ -151,11 +156,19 @@ export function ColorControlPointsInput({
                 document.onmouseup = handleMouseUp;
               }}
             >⠿</div>
-            <div className="grow min-w-0">
-              <ColorPicker
-                className="max-w-full"
-                colorPreviewClassName="w-4!"
-                value={color}
+            <div className="grow min-w-0 flex flex-row gap-1">
+              <HexColorInput
+                className={`
+                  min-w-0 grow border border-neutral-700 rounded-md py-0.5
+                  px-1 focus:outline focus:outline-neutral-400
+                `}
+                color={color}
+                onChange={(newColor) => {
+                  onChange(values.toSpliced(i, 1, { color: newColor, lightness }));
+                }}
+              />
+              <PopoverColorPicker
+                color={color}
                 onChange={(newColor) => {
                   onChange(values.toSpliced(i, 1, { color: newColor, lightness }));
                 }}
@@ -189,7 +202,7 @@ export function ColorControlPointsInput({
             if (lightness > 1.0 || lightness < 0.0)
               throw new Error("Click in canvas outside the canvas?");
             const newValues = values
-              .toSpliced(0, 0, { color: getColorAtLightness(values, lightness), lightness, });
+              .toSpliced(0, 0, { color: getColorAtLightness(values, lightness) ?? "#000000", lightness, });
             newValues.sort((a, b) => a.lightness - b.lightness);
             onChange(newValues)
           }}

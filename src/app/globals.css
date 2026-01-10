@@ -20,6 +20,19 @@
   --shadow-center: 0 0 4px -1px rgb(0, 0, 0, 0.1);
   --shadow-center-sm: 0 0 4px -1px rgb(0, 0, 0, 0.1);
   --shadow-center-md: 0 0 6px -1px rgb(0, 0, 0, 0.1);
+  
+  --animate-fade-in-opacity: fade-in-opacity var(--default-transition-duration) ease-in;
+  @keyframes fade-in-opacity {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  /* For some reason has to be a little longer or it shows a frame of the
+   * element with opacity 1 before unmounting */
+  --animate-fade-out-opacity: fade-out-opacity calc(var(--default-transition-duration) + 10ms) ease-in;
+  @keyframes fade-out-opacity {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
 }
 
 @media (prefers-color-scheme: dark) {

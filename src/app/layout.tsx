@@ -28,6 +28,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased w-full h-full font-sans`}
       >
         {children}
+        <div id="overlay-portal" />
       </body>
     </html>
   );

@@ -4,8 +4,9 @@ import { ChangeEvent } from "react";
 import { nodeDefinitions } from "./definitions";
 import useStore from "./store";
 import { useShallow } from "zustand/shallow";
-import { ColorPicker } from "@/components/color-picker";
 import { ColorControlPointsInput } from "@/components/color-control-points-input";
+import { PopoverColorPicker } from "@/components/popover-color-picker";
+import { HexColorInput } from "react-colorful";
 
 function BaseNode(props: NodeProps) {
   const id = props.id;
@@ -90,19 +91,35 @@ function BaseNode(props: NodeProps) {
       return (
         <label key={param.name}>
           <span className="block text-left">{param.name}</span>
-          <ColorPicker
-            className="w-full nodrag"
-            id="seed"
-            onChange={(color) => setNodeValue(
-              id,
-              i,
-              {
-                inputType: param.inputType,
-                value: color ?? param.value,
-              },
-            )}
-            value={value.value}
-          />
+          <div className="grow min-w-0 flex flex-row gap-1">
+            <HexColorInput
+              className={`
+                min-w-0 grow border border-neutral-700 rounded-md py-0.5
+                px-1 focus:outline focus:outline-neutral-400
+              `}
+              color={value.value}
+              onChange={(color) => setNodeValue(
+                id,
+                i,
+                {
+                  inputType: param.inputType,
+                  value: color ?? param.value,
+                },
+              )}
+            />
+            <PopoverColorPicker
+              className="nodrag"
+              onChange={(color) => setNodeValue(
+                id,
+                i,
+                {
+                  inputType: param.inputType,
+                  value: color ?? param.value,
+                },
+              )}
+              color={value.value}
+            />
+          </div>
         </label>
       );
     }

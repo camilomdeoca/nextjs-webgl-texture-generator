@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { UnmountOnConditionDelayed } from "./unmount-on-condition-delayed";
 
 type MenubarButtonParameters = {
   label: string,
@@ -10,6 +11,15 @@ function MenubarButton({
   options,
 }: MenubarButtonParameters) {
   const [isOpen, setIsOpen] = useState(false);
+  
+  const delay = useMemo(() =>
+    parseInt(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue("--default-transition-duration"),
+      10,
+    ),
+    [],
+  );
 
   return (
     <>
@@ -19,11 +29,17 @@ function MenubarButton({
       >
         {label}
       </button>
+      <UnmountOnConditionDelayed
+        showCondition={isOpen}
+        delay={delay}
+      >
       <div
         className={`
           flex flex-col absolute z-10 bg-neutral-800 rounded-md mt-2
-          origin-top-left border border-neutral-700 font-normal transition-opacity
-          ${!isOpen && "opacity-0 pointer-events-none"}
+          origin-top-left border border-neutral-700 font-normal
+          ${isOpen
+            ? "animate-fade-in-opacity"
+            : "animate-fade-out-opacity pointer-events-none"}
         `}
       >
         {options.map(({label, callback}, i) => 
@@ -40,6 +56,7 @@ function MenubarButton({
         )}
       </div>
       {isOpen && <div onMouseDown={() => setIsOpen(false)} className="fixed inset-0" />}
+      </UnmountOnConditionDelayed>
     </>
   );
 }

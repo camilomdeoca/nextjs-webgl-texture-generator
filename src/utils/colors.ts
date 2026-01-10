@@ -1,8 +1,8 @@
-export function hexToRgba(hex: string): [number, number, number, number] {
+export function hexToRgba(hex: string): [number, number, number, number] | undefined {
   const clean = hex.replace(/^#/, '');
 
   if (![3, 4, 6, 8].includes(clean.length)) {
-    throw new Error(`Invalid hex color: ${hex}`);
+    return undefined;
   }
 
   const expand = (s: string) =>
