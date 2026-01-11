@@ -1,3 +1,47 @@
+// Hash without Sine
+// MIT License...
+/* Copyright (c)2014 David Hoskins.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.*/
+
+//----------------------------------------------------------------------------------------
+
+//The name "hash[Out][In]" describes the function signature:
+// * EXAMPLES:
+// * hash12: float = hash(vec2)  // 1 component out, 2 components in
+// * hash21: vec2  = hash(float)  // 2 components out, 1 component in
+// * hash22: vec2  = hash(vec2)  // 2 components out, 2 components in
+// * hash33: vec3  = hash(vec3)  // 3 components out, 3 components in
+vec3 hash33(vec3 p3)
+{
+	p3 = fract(p3 * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yxz+33.33);
+    return fract((p3.xxy + p3.yxx)*p3.zyx);
+}
+
+vec2 hash22(vec2 p)
+{
+	vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx+33.33);
+    return fract((p3.xx+p3.yz)*p3.zy);
+}
+
 /* https://www.shadertoy.com/view/XsX3zB
  *
  * The MIT License
@@ -28,18 +72,6 @@
  * ~
  *
  */
-
-/* discontinuous pseudorandom uniformly distributed in [-0.5, +0.5]^3 */
-vec3 random3(vec3 c) {
-    float j = 4096.0 * sin(dot(c, vec3(17.0, 59.4, 15.0)));
-    vec3 r;
-    r.z = fract(512.0 * j);
-    j *= .125;
-    r.x = fract(512.0 * j);
-    j *= .125;
-    r.y = fract(512.0 * j);
-    return r - 0.5;
-}
 
 /* skew constants for 3d simplex functions */
 const float F3 = 0.3333333;
@@ -78,10 +110,10 @@ float simplex3d(vec3 p) {
     w = max(0.6 - w, 0.0);
 
     /* calculate surflet components */
-    d.x = dot(random3(s), x);
-    d.y = dot(random3(s + i1), x1);
-    d.z = dot(random3(s + i2), x2);
-    d.w = dot(random3(s + 1.0), x3);
+    d.x = dot(hash33(s      ) - .5, x);
+    d.y = dot(hash33(s + i1 ) - .5, x1);
+    d.z = dot(hash33(s + i2 ) - .5, x2);
+    d.w = dot(hash33(s + 1.0) - .5, x3);
 
     /* multiply d by w^4 */
     w *= w;
@@ -90,6 +122,52 @@ float simplex3d(vec3 p) {
 
     /* 3. return the sum of the four surflets */
     return dot(d, vec4(52.0));
+}
+
+// The MIT License
+// Copyright © 2014 Inigo Quilez
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// Smooth Voronoi - avoiding aliasing, by replacing the usual min() function, which is
+// discontinuous, with a smooth version. That can help preventing some aliasing, and also
+// provides with more artistic control of the final procedural textures/models.
+
+// More Voronoi shaders:
+//
+// Exact edges:  https://www.shadertoy.com/view/ldl3W8
+// Hierarchical: https://www.shadertoy.com/view/Xll3zX
+// Smooth:       https://www.shadertoy.com/view/ldB3zc
+// Voronoise:    https://www.shadertoy.com/view/Xd23Dh
+
+float voronoi(vec2 x, float seed)
+{
+    vec2 n = floor( x );
+    vec2 f = fract( x );
+
+	float m = 8.0;
+    for( int j=-2; j<=2; j++ )
+    for( int i=-2; i<=2; i++ )
+    {
+        vec2 g = vec2( float(i),float(j) );
+        vec2 o = mix(
+            hash22( n + g + (floor(seed)    )*4371.0 ),
+            hash22( n + g + (floor(seed)+1.0)*4371.0 ),
+            fract(seed)
+        );
+
+        // distance to cell		
+		float d = length(g - f + o);
+		
+        // cell color
+		vec3 col = vec3(d);
+        // in linear space
+        // col = col*col;
+        
+        // do the smooth min for colors and distances		
+	    m = min(m, d);
+    }
+	
+	return m;
 }
 
 struct ColorControlPoint {

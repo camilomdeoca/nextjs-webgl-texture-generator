@@ -318,5 +318,72 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
       { name: "In", handleId: "in" },
     ],
   }],
+  ["worley", {
+    name: "Worley",
+    template: preprocessTemplate(`
+      float value = 0.0;
+      for (uint octave_idx = 0u; octave_idx < $octaves; octave_idx++)
+      {
+        float weight = pow($octave_weight_relation, float(octave_idx));
+        if (abs($octave_weight_relation - 1.0) < 1e-6)
+          weight *= 1.0 / float($octaves);
+        else
+          weight *= (1.0 - $octave_weight_relation) / (1.0 - pow($octave_weight_relation, float($octaves)));
+
+        value += voronoi($UV * $scale * pow(2.0, float(octave_idx)), $seed) * weight;
+      }
+      $OUT = vec4(vec3(value), 1.0);
+      $OUT = clamp($OUT, 0.0, 1.0);
+    `),
+    parameters: [
+      {
+        name: "Seed",
+        uniformName: "seed",
+        inputType: "number",
+        uniformType: { type: "float", array: false },
+        settings: {
+          step: 0.1,
+        },
+        value: 0.0,
+      },
+      {
+        name: "Scale",
+        uniformName: "scale",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.001,
+          max: 100,
+          step: 0.01,
+        },
+        value: 10.0,
+      },
+      {
+        name: "Octave weight relation",
+        uniformName: "octave_weight_relation",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.001,
+          max: 2.0,
+          step: 0.001,
+        },
+        value: 0.5,
+      },
+      {
+        name: "Octaves",
+        uniformName: "octaves",
+        inputType: "slider",
+        uniformType: { type: "uint", array: false },
+        settings: {
+          min: 1,
+          max: 8,
+          step: 1,
+        },
+        value: 1.0,
+      },
+    ],
+    inputs: [],
+  }],
 ]);
 export { nodeDefinitions };
