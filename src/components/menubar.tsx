@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { UnmountOnConditionDelayed } from "./unmount-on-condition-delayed";
 import { Overlay } from "./overlay";
 
@@ -13,15 +13,6 @@ function MenubarButton({
 }: MenubarButtonParameters) {
   const [isOpen, setIsOpen] = useState(false);
   
-  const delay = useMemo(() =>
-    parseInt(
-      getComputedStyle(document.documentElement)
-        .getPropertyValue("--default-transition-duration"),
-      10,
-    ),
-    [],
-  );
-  
   const menubarButtonRef = useRef<HTMLButtonElement | null>(null);
 
   return (
@@ -35,7 +26,6 @@ function MenubarButton({
       </button>
       <UnmountOnConditionDelayed
         showCondition={isOpen}
-        delay={delay}
       >
         <Overlay
           relativeTo={menubarButtonRef}

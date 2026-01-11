@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { UnmountOnConditionDelayed } from "./unmount-on-condition-delayed";
 import { Overlay } from "./overlay";
@@ -23,15 +23,6 @@ export const PopoverColorPicker = ({
 
   const colorPreviewRef = useRef<HTMLDivElement>(null);
 
-  const delay = useMemo(() =>
-    parseInt(
-      getComputedStyle(document.documentElement)
-        .getPropertyValue("--default-transition-duration"),
-      10,
-    ),
-    [],
-  );
-
   return (
     <div className={`${className}`}>
       <div
@@ -45,7 +36,6 @@ export const PopoverColorPicker = ({
 
       <UnmountOnConditionDelayed
         showCondition={isOpen}
-        delay={delay}
       >
         <Overlay
           relativeTo={colorPreviewRef}
