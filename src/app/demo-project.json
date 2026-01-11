@@ -1,0 +1,295 @@
+{
+    "nodes": [
+        {
+            "id": "id803b750e38a3a8",
+            "position": {
+                "x": 443.8591301135097,
+                "y": -122.97232148495743
+            },
+            "data": {},
+            "type": "baseNode",
+            "measured": {
+                "width": 192,
+                "height": 442
+            },
+            "selected": true,
+            "dragging": false
+        },
+        {
+            "id": "id15889ee7891d",
+            "position": {
+                "x": 679.9529322170183,
+                "y": -122.68961103744097
+            },
+            "data": {},
+            "type": "baseNode",
+            "measured": {
+                "width": 192,
+                "height": 440
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "idea3c60ff1f839",
+            "position": {
+                "x": 975.5780572654387,
+                "y": 66.00795578464856
+            },
+            "data": {},
+            "type": "baseNode",
+            "measured": {
+                "width": 192,
+                "height": 336
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "ida38dbcb8727a8",
+            "position": {
+                "x": 675.0817016953084,
+                "y": 360.50812251587587
+            },
+            "data": {},
+            "type": "baseNode",
+            "measured": {
+                "width": 192,
+                "height": 442
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "id72cdde76f84d8",
+            "position": {
+                "x": 1206.8755909687125,
+                "y": 114.21093057522023
+            },
+            "data": {},
+            "type": "baseNode",
+            "measured": {
+                "width": 192,
+                "height": 480
+            },
+            "selected": false,
+            "dragging": false
+        }
+    ],
+    "edges": [
+        {
+            "source": "id803b750e38a3a8",
+            "sourceHandle": "out",
+            "target": "id15889ee7891d",
+            "targetHandle": "in",
+            "id": "xy-edge__id803b750e38a3a8out-id15889ee7891din"
+        },
+        {
+            "source": "ida38dbcb8727a8",
+            "sourceHandle": "out",
+            "target": "idea3c60ff1f839",
+            "targetHandle": "warped",
+            "id": "xy-edge__ida38dbcb8727a8out-idea3c60ff1f839warped"
+        },
+        {
+            "source": "id15889ee7891d",
+            "sourceHandle": "out",
+            "target": "idea3c60ff1f839",
+            "targetHandle": "warper",
+            "id": "xy-edge__id15889ee7891dout-idea3c60ff1f839warper"
+        },
+        {
+            "source": "idea3c60ff1f839",
+            "sourceHandle": "out",
+            "target": "id72cdde76f84d8",
+            "targetHandle": "in",
+            "id": "xy-edge__idea3c60ff1f839out-id72cdde76f84d8in"
+        }
+    ],
+    "viewport": {
+        "x": 24.646270146322877,
+        "y": 179.5773082388958,
+        "zoom": 0.870550563296124
+    },
+    "inputNodes": [
+        [
+            "id803b750e38a3a8",
+            []
+        ],
+        [
+            "id15889ee7891d",
+            [
+                "id803b750e38a3a8"
+            ]
+        ],
+        [
+            "ida38dbcb8727a8",
+            []
+        ],
+        [
+            "idea3c60ff1f839",
+            [
+                "id15889ee7891d",
+                "ida38dbcb8727a8",
+                "id803b750e38a3a8"
+            ]
+        ],
+        [
+            "id72cdde76f84d8",
+            [
+                "idea3c60ff1f839",
+                "id15889ee7891d",
+                "ida38dbcb8727a8",
+                "id803b750e38a3a8"
+            ]
+        ]
+    ],
+    "values": [
+        [
+            "id803b750e38a3a8",
+            [
+                {
+                    "inputType": "number",
+                    "value": 0
+                },
+                {
+                    "inputType": "slider",
+                    "value": 12.991
+                },
+                {
+                    "inputType": "slider",
+                    "value": 0.279
+                },
+                {
+                    "inputType": "slider",
+                    "value": 8
+                }
+            ]
+        ],
+        [
+            "id15889ee7891d",
+            [
+                {
+                    "inputType": "slider",
+                    "value": 1
+                },
+                {
+                    "inputType": "slider",
+                    "value": 2.15
+                },
+                {
+                    "inputType": "slider",
+                    "value": 1
+                },
+                {
+                    "inputType": "slider",
+                    "value": 1.47
+                }
+            ]
+        ],
+        [
+            "idea3c60ff1f839",
+            [
+                {
+                    "inputType": "slider",
+                    "value": 1
+                }
+            ]
+        ],
+        [
+            "ida38dbcb8727a8",
+            [
+                {
+                    "inputType": "number",
+                    "value": 6.6
+                },
+                {
+                    "inputType": "slider",
+                    "value": 3.971
+                },
+                {
+                    "inputType": "slider",
+                    "value": 0.5
+                },
+                {
+                    "inputType": "slider",
+                    "value": 1
+                }
+            ]
+        ],
+        [
+            "id72cdde76f84d8",
+            [
+                {
+                    "inputType": "colorcontrolpointarray",
+                    "value": [
+                        {
+                            "color": "#2a0000",
+                            "lightness": 0.06000000000000005
+                        },
+                        {
+                            "color": "#520000",
+                            "lightness": 0.20999999999999996
+                        },
+                        {
+                            "color": "#be0000",
+                            "lightness": 0.3833333333333333
+                        },
+                        {
+                            "color": "#000000",
+                            "lightness": 0.5700000000000001
+                        },
+                        {
+                            "color": "#142c00",
+                            "lightness": 1
+                        }
+                    ]
+                }
+            ]
+        ]
+    ],
+    "templates": [
+        [
+            "id803b750e38a3a8",
+            "\nfloat value = 0.0;\nfor (uint octave_idx = 0u; octave_idx < id803b750e38a3a8_octaves; octave_idx++)\n{\n  float weight = pow(id803b750e38a3a8_octave_weight_relation, float(octave_idx));\n  if (abs(id803b750e38a3a8_octave_weight_relation - 1.0) < 1e-6)\n    weight *= 1.0 / float(id803b750e38a3a8_octaves);\n  else\n    weight *= (1.0 - id803b750e38a3a8_octave_weight_relation) / (1.0 - pow(id803b750e38a3a8_octave_weight_relation, float(id803b750e38a3a8_octaves)));\n\n  value += voronoi($UV * id803b750e38a3a8_scale * pow(2.0, float(octave_idx)), id803b750e38a3a8_seed) * weight;\n}\n$OUT = vec4(vec3(value), 1.0);\n$OUT = clamp($OUT, 0.0, 1.0);\n"
+        ],
+        [
+            "id15889ee7891d",
+            "\nvec4 id15889ee7891d_input;\nvec2 id15889ee7891d_uv = $UV;\n{\n  float value = 0.0;\n  for (uint octave_idx = 0u; octave_idx < id803b750e38a3a8_octaves; octave_idx++)\n  {\n    float weight = pow(id803b750e38a3a8_octave_weight_relation, float(octave_idx));\n    if (abs(id803b750e38a3a8_octave_weight_relation - 1.0) < 1e-6)\n      weight *= 1.0 / float(id803b750e38a3a8_octaves);\n    else\n      weight *= (1.0 - id803b750e38a3a8_octave_weight_relation) / (1.0 - pow(id803b750e38a3a8_octave_weight_relation, float(id803b750e38a3a8_octaves)));\n  \n    value += voronoi(id15889ee7891d_uv * id803b750e38a3a8_scale * pow(2.0, float(octave_idx)), id803b750e38a3a8_seed) * weight;\n  }\n  id15889ee7891d_input = vec4(vec3(value), 1.0);\n  id15889ee7891d_input = clamp(id15889ee7891d_input, 0.0, 1.0);\n}\n\nvec3 rgb = (id15889ee7891d_input.rgb - 0.5) * id15889ee7891d_contrast + 0.5;\nvec3 hsv = rgb2hsv(rgb);\nhsv.y *= id15889ee7891d_saturation;\nhsv.z *= id15889ee7891d_brightness;\nrgb = hsv2rgb(hsv);\nrgb = pow(rgb, vec3(1.0 / id15889ee7891d_gamma));\n$OUT = vec4(rgb, id15889ee7891d_input.a);\n$OUT = clamp($OUT, 0.0, 1.0);\n"
+        ],
+        [
+            "ida38dbcb8727a8",
+            "\nfloat value = 0.0;\nfor (uint octave_idx = 0u; octave_idx < ida38dbcb8727a8_octaves; octave_idx++)\n{\n  float weight = pow(ida38dbcb8727a8_octave_weight_relation, float(octave_idx));\n  if (abs(ida38dbcb8727a8_octave_weight_relation - 1.0) < 1e-6)\n    weight *= 1.0 / float(ida38dbcb8727a8_octaves);\n  else\n    weight *= (1.0 - ida38dbcb8727a8_octave_weight_relation) / (1.0 - pow(ida38dbcb8727a8_octave_weight_relation, float(ida38dbcb8727a8_octaves)));\n\n  value += voronoi($UV * ida38dbcb8727a8_scale * pow(2.0, float(octave_idx)), ida38dbcb8727a8_seed) * weight;\n}\n$OUT = vec4(vec3(value), 1.0);\n$OUT = clamp($OUT, 0.0, 1.0);\n"
+        ],
+        [
+            "idea3c60ff1f839",
+            "\nvec4 idea3c60ff1f839_warperValue;\nvec2 idea3c60ff1f839_idea3c60ff1f839_uv = $UV;\n{\n  vec4 id15889ee7891d_input;\n  vec2 id15889ee7891d_uv = idea3c60ff1f839_idea3c60ff1f839_uv;\n  {\n    float value = 0.0;\n    for (uint octave_idx = 0u; octave_idx < id803b750e38a3a8_octaves; octave_idx++)\n    {\n      float weight = pow(id803b750e38a3a8_octave_weight_relation, float(octave_idx));\n      if (abs(id803b750e38a3a8_octave_weight_relation - 1.0) < 1e-6)\n        weight *= 1.0 / float(id803b750e38a3a8_octaves);\n      else\n        weight *= (1.0 - id803b750e38a3a8_octave_weight_relation) / (1.0 - pow(id803b750e38a3a8_octave_weight_relation, float(id803b750e38a3a8_octaves)));\n    \n      value += voronoi(id15889ee7891d_uv * id803b750e38a3a8_scale * pow(2.0, float(octave_idx)), id803b750e38a3a8_seed) * weight;\n    }\n    id15889ee7891d_input = vec4(vec3(value), 1.0);\n    id15889ee7891d_input = clamp(id15889ee7891d_input, 0.0, 1.0);\n  }\n  \n  vec3 rgb = (id15889ee7891d_input.rgb - 0.5) * id15889ee7891d_contrast + 0.5;\n  vec3 hsv = rgb2hsv(rgb);\n  hsv.y *= id15889ee7891d_saturation;\n  hsv.z *= id15889ee7891d_brightness;\n  rgb = hsv2rgb(hsv);\n  rgb = pow(rgb, vec3(1.0 / id15889ee7891d_gamma));\n  idea3c60ff1f839_warperValue = vec4(rgb, id15889ee7891d_input.a);\n  idea3c60ff1f839_warperValue = clamp(idea3c60ff1f839_warperValue, 0.0, 1.0);\n}\nvec2 d = vec2(dFdx(idea3c60ff1f839_warperValue.r), dFdy(idea3c60ff1f839_warperValue.r));\n\nvec4 idea3c60ff1f839_outputColor;\nidea3c60ff1f839_idea3c60ff1f839_uv += d * idea3c60ff1f839_strength;\n{\n  float value = 0.0;\n  for (uint octave_idx = 0u; octave_idx < ida38dbcb8727a8_octaves; octave_idx++)\n  {\n    float weight = pow(ida38dbcb8727a8_octave_weight_relation, float(octave_idx));\n    if (abs(ida38dbcb8727a8_octave_weight_relation - 1.0) < 1e-6)\n      weight *= 1.0 / float(ida38dbcb8727a8_octaves);\n    else\n      weight *= (1.0 - ida38dbcb8727a8_octave_weight_relation) / (1.0 - pow(ida38dbcb8727a8_octave_weight_relation, float(ida38dbcb8727a8_octaves)));\n  \n    value += voronoi(idea3c60ff1f839_idea3c60ff1f839_uv * ida38dbcb8727a8_scale * pow(2.0, float(octave_idx)), ida38dbcb8727a8_seed) * weight;\n  }\n  idea3c60ff1f839_outputColor = vec4(vec3(value), 1.0);\n  idea3c60ff1f839_outputColor = clamp(idea3c60ff1f839_outputColor, 0.0, 1.0);\n}\n\n$OUT = idea3c60ff1f839_outputColor;\n$OUT = clamp($OUT, 0.0, 1.0);\n"
+        ],
+        [
+            "id72cdde76f84d8",
+            "\nvec2 id72cdde76f84d8_uv = $UV;\nvec4 id72cdde76f84d8_inputColor;\n{\n  vec4 idea3c60ff1f839_warperValue;\n  vec2 idea3c60ff1f839_idea3c60ff1f839_uv = id72cdde76f84d8_uv;\n  {\n    vec4 id15889ee7891d_input;\n    vec2 id15889ee7891d_uv = idea3c60ff1f839_idea3c60ff1f839_uv;\n    {\n      float value = 0.0;\n      for (uint octave_idx = 0u; octave_idx < id803b750e38a3a8_octaves; octave_idx++)\n      {\n        float weight = pow(id803b750e38a3a8_octave_weight_relation, float(octave_idx));\n        if (abs(id803b750e38a3a8_octave_weight_relation - 1.0) < 1e-6)\n          weight *= 1.0 / float(id803b750e38a3a8_octaves);\n        else\n          weight *= (1.0 - id803b750e38a3a8_octave_weight_relation) / (1.0 - pow(id803b750e38a3a8_octave_weight_relation, float(id803b750e38a3a8_octaves)));\n      \n        value += voronoi(id15889ee7891d_uv * id803b750e38a3a8_scale * pow(2.0, float(octave_idx)), id803b750e38a3a8_seed) * weight;\n      }\n      id15889ee7891d_input = vec4(vec3(value), 1.0);\n      id15889ee7891d_input = clamp(id15889ee7891d_input, 0.0, 1.0);\n    }\n    \n    vec3 rgb = (id15889ee7891d_input.rgb - 0.5) * id15889ee7891d_contrast + 0.5;\n    vec3 hsv = rgb2hsv(rgb);\n    hsv.y *= id15889ee7891d_saturation;\n    hsv.z *= id15889ee7891d_brightness;\n    rgb = hsv2rgb(hsv);\n    rgb = pow(rgb, vec3(1.0 / id15889ee7891d_gamma));\n    idea3c60ff1f839_warperValue = vec4(rgb, id15889ee7891d_input.a);\n    idea3c60ff1f839_warperValue = clamp(idea3c60ff1f839_warperValue, 0.0, 1.0);\n  }\n  vec2 d = vec2(dFdx(idea3c60ff1f839_warperValue.r), dFdy(idea3c60ff1f839_warperValue.r));\n  \n  vec4 idea3c60ff1f839_outputColor;\n  idea3c60ff1f839_idea3c60ff1f839_uv += d * idea3c60ff1f839_strength;\n  {\n    float value = 0.0;\n    for (uint octave_idx = 0u; octave_idx < ida38dbcb8727a8_octaves; octave_idx++)\n    {\n      float weight = pow(ida38dbcb8727a8_octave_weight_relation, float(octave_idx));\n      if (abs(ida38dbcb8727a8_octave_weight_relation - 1.0) < 1e-6)\n        weight *= 1.0 / float(ida38dbcb8727a8_octaves);\n      else\n        weight *= (1.0 - ida38dbcb8727a8_octave_weight_relation) / (1.0 - pow(ida38dbcb8727a8_octave_weight_relation, float(ida38dbcb8727a8_octaves)));\n    \n      value += voronoi(idea3c60ff1f839_idea3c60ff1f839_uv * ida38dbcb8727a8_scale * pow(2.0, float(octave_idx)), ida38dbcb8727a8_seed) * weight;\n    }\n    idea3c60ff1f839_outputColor = vec4(vec3(value), 1.0);\n    idea3c60ff1f839_outputColor = clamp(idea3c60ff1f839_outputColor, 0.0, 1.0);\n  }\n  \n  id72cdde76f84d8_inputColor = idea3c60ff1f839_outputColor;\n  id72cdde76f84d8_inputColor = clamp(id72cdde76f84d8_inputColor, 0.0, 1.0);\n}\n\nfloat lightness = id72cdde76f84d8_inputColor.r; // TODO: get hsl lightness instead\n\nint closestLower = -1;\nint closestUpper = -1;\n\nfor (int i = 0; i < id72cdde76f84d8_color_count; i++) {\n  if (id72cdde76f84d8_color[i].lightness <= lightness && (closestLower < 0 || id72cdde76f84d8_color[i].lightness > id72cdde76f84d8_color[closestLower].lightness)) closestLower = i;\n  if (id72cdde76f84d8_color[i].lightness >= lightness && (closestUpper < 0 || id72cdde76f84d8_color[i].lightness < id72cdde76f84d8_color[closestUpper].lightness)) closestUpper = i;\n}\n\nif (closestLower < 0) $OUT = id72cdde76f84d8_color[closestUpper].color;\nelse if (closestUpper < 0) $OUT = id72cdde76f84d8_color[closestLower].color;\nelse if (id72cdde76f84d8_color[closestLower].lightness == id72cdde76f84d8_color[closestUpper].lightness) $OUT = id72cdde76f84d8_color[closestLower].color;\nelse {\n  float factor\n    = (lightness - id72cdde76f84d8_color[closestLower].lightness)\n    / (id72cdde76f84d8_color[closestUpper].lightness - id72cdde76f84d8_color[closestLower].lightness);\n\n  $OUT = mix(id72cdde76f84d8_color[closestLower].color, id72cdde76f84d8_color[closestUpper].color, factor);\n}\n$OUT = clamp($OUT, 0.0, 1.0);\n"
+        ]
+    ],
+    "types": [
+        [
+            "id803b750e38a3a8",
+            "worley"
+        ],
+        [
+            "id15889ee7891d",
+            "colorcorrection"
+        ],
+        [
+            "idea3c60ff1f839",
+            "warp"
+        ],
+        [
+            "ida38dbcb8727a8",
+            "worley"
+        ],
+        [
+            "id72cdde76f84d8",
+            "colorize"
+        ]
+    ]
+}

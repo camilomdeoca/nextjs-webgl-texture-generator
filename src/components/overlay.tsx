@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 
 type OverlayProps = {
   children: ReactNode,
-  relativeTo: RefObject<HTMLElement | null>,
+  relativeTo?: RefObject<HTMLElement | null>,
 };
 
 export function Overlay({
@@ -12,11 +12,22 @@ export function Overlay({
 }: OverlayProps) {
   const overlayPortal = document.getElementById("overlay-portal");
 
+  if (!overlayPortal) return;
+
+  if (relativeTo === undefined) {
+    return createPortal(
+      <div className="absolute inset-0" >
+        {children}
+      </div>,
+      overlayPortal,
+    );
+  }
+
   const rect = relativeTo.current?.getBoundingClientRect();
   const x = rect?.x;
   const y = rect ? rect.y + rect.height : undefined;
 
-  if(!x || !y || !overlayPortal) return;
+  if(!x || !y) return;
 
   return createPortal(
     <div style={{ left: x, top: y }} className="absolute" >

@@ -3,7 +3,7 @@
 import Menubar from "@/components/menubar";
 import NodesPalette from "@/components/nodes-palette";
 import BaseNode from "@/nodes/base-node";
-import useStore, { loadSerializableStateFromFile } from "@/nodes/store";
+import useStore, { isSerializableState, loadSerializableStateFromFile } from "@/nodes/store";
 import { DndContext, useDroppable } from "@dnd-kit/core";
 import {
   ReactFlow,
@@ -11,8 +11,13 @@ import {
   Controls,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { useSearchParams } from "next/navigation";
 import { ReactNode, useEffect, useId, useState } from "react";
 import { useShallow } from "zustand/shallow";
+import demoProject from "./demo-project.json";
+import { UnmountOnConditionDelayed } from "@/components/unmount-on-condition-delayed";
+import { Overlay } from "@/components/overlay";
+import { Settings } from "@/components/settings";
 
 type DroppableProperties = {
   id: string;
@@ -75,9 +80,18 @@ export default function Editor() {
 
   const [showDragDestination, setShowDragDestination] = useState(false);
 
+  const inDemo = useSearchParams().has('demo');
+
   useEffect(() => {
-    (async () => load())();
-  }, [load]);
+    if (inDemo) {
+      (async () => {
+        if (!isSerializableState(demoProject)) return;
+        loadSerializableState(demoProject);
+      })();
+    } else {
+      (async () => load())();
+    }
+  }, [inDemo, load, loadSerializableState]);
 
   // TODO: make auto-saving toggleable
   // useEffect(() => {
@@ -92,6 +106,8 @@ export default function Editor() {
 
   const dndId = useId();
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   return (
     <div className="w-full h-full flex flex-col text-neutral-100 bg-red-950">
       <DndContext id={dndId} onDragEnd={handleAddNodeDragEnd}>
@@ -105,6 +121,12 @@ export default function Editor() {
               { label: "Load", callback: load },
               { label: "Export", callback: onExport },
               { label: "Import", callback: onImport },
+            ],
+          },
+          {
+            label: "Edit",
+            options: [
+              { label: "Settings", callback: () => setSettingsOpen(true) },
             ],
           },
         ]}
@@ -127,6 +149,7 @@ export default function Editor() {
           )}
           <ReactFlow
             colorMode="dark"
+            maxZoom={3}
             nodeTypes={nodeTypes}
             nodes={nodes}
             edges={edges}
@@ -165,6 +188,25 @@ export default function Editor() {
           </ReactFlow>
         </Droppable>
       </div>
+      <UnmountOnConditionDelayed showCondition={settingsOpen}>
+        <Overlay>
+          <div className="w-full h-full">
+            <Settings
+              className={`
+                w-1/3 absolute m-auto inset-0 h-1/3 z-50
+                ${settingsOpen
+                  ? "animate-fade-in-opacity"
+                  : "animate-fade-out-opacity pointer-events-none"}
+              `}
+              onClose={() => setSettingsOpen(false)}
+            />
+          </div>
+          {settingsOpen && <div
+            onMouseDown={() => setSettingsOpen(false)}
+            className="fixed inset-0 z-40"
+          />}
+        </Overlay>
+      </UnmountOnConditionDelayed>
       </DndContext>
     </div>
   );

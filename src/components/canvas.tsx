@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import glslUtils from "@/shaders/utils.glsl";
 import { BaseNodeParameterDefinition } from "@/nodes/store";
 import { hexToRgba } from "@/utils/colors";
+import useSettingsStore from "./settings";
 
 const vsSrc = `#version 300 es
 precision highp float;
@@ -74,7 +75,7 @@ function Canvas({
   className,
   shaderTemplate,
   parameters,
-  previewSize = 512,
+  previewSize,
 }: {
   className?: string,
   shaderTemplate?: string,
@@ -84,6 +85,12 @@ function Canvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [program, setProgram] = useState<WebGLProgram | null>(null);
   const [src, setSrc] = useState<string | null>(null);
+
+  const defaultPreviewSize = useSettingsStore(state => state.nodePreviewSize);
+  
+  if (previewSize === undefined) {
+    previewSize = defaultPreviewSize;
+  }
 
   // Reconstruct shader when connected nodes change
   useEffect(

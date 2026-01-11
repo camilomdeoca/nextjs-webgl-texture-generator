@@ -87,7 +87,7 @@ export function useCustomComparison<S, U>(
 }
 
 // TODO: check also inside array fields
-function isSerializableState(flow: unknown): flow is SerializableState {
+export function isSerializableState(flow: unknown): flow is SerializableState {
   if (typeof flow !== "object" || flow === null) return false;
 
   if (!("nodes" in flow) || !Array.isArray(flow.nodes)) return false;
