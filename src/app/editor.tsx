@@ -3,7 +3,7 @@
 import Menubar from "@/components/menubar";
 import NodesPalette from "@/components/nodes-palette";
 import BaseNode from "@/nodes/base-node";
-import useStore, { isSerializableState, loadSerializableStateFromFile } from "@/nodes/store";
+import useStore, { loadSerializableStateFromFile } from "@/nodes/store";
 import { DndContext, useDroppable } from "@dnd-kit/core";
 import {
   ReactFlow,
@@ -11,10 +11,8 @@ import {
   Controls,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useSearchParams } from "next/navigation";
 import { ReactNode, useEffect, useId, useState } from "react";
 import { useShallow } from "zustand/shallow";
-import demoProject from "./demo-project.json";
 import { UnmountOnConditionDelayed } from "@/components/unmount-on-condition-delayed";
 import { Overlay } from "@/components/overlay";
 import { Settings } from "@/components/settings";
@@ -80,18 +78,11 @@ export default function Editor() {
 
   const [showDragDestination, setShowDragDestination] = useState(false);
 
-  const inDemo = useSearchParams().has('demo');
-
   useEffect(() => {
-    if (inDemo) {
       (async () => {
-        if (!isSerializableState(demoProject)) return;
-        loadSerializableState(demoProject);
+        load();
       })();
-    } else {
-      (async () => load())();
-    }
-  }, [inDemo, load, loadSerializableState]);
+  }, [load, loadSerializableState]);
 
   // TODO: make auto-saving toggleable
   // useEffect(() => {

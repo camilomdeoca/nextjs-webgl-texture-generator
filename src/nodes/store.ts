@@ -18,6 +18,7 @@ import { allDefined } from '@/utils/lists';
 import { create } from 'zustand';
 import { useRef } from 'react';
 import { DistributivePick, distributivePick } from '@/utils/types';
+import demoProject from "@/app/demo-project.json";
 
 export type BaseNodeParameterDefinition = Parameter & { id: string };
 
@@ -87,7 +88,7 @@ export function useCustomComparison<S, U>(
 }
 
 // TODO: check also inside array fields
-export function isSerializableState(flow: unknown): flow is SerializableState {
+function isSerializableState(flow: unknown): flow is SerializableState {
   if (typeof flow !== "object" || flow === null) return false;
 
   if (!("nodes" in flow) || !Array.isArray(flow.nodes)) return false;
@@ -378,7 +379,12 @@ const useStore = create<State & Actions>((set, get) => ({
     (async () => {
       const serializableState = loadSerializableStateFromLocalStorage();
       console.log("LOADED", serializableState);
-      if (serializableState) get().loadSerializableState(serializableState);
+      if (serializableState) {
+        get().loadSerializableState(serializableState);
+      } else {
+        if (!isSerializableState(demoProject)) return;
+        get().loadSerializableState(demoProject);
+      }
     })();
   },
   export: () => {
