@@ -70,16 +70,16 @@ function createProgram(gl: WebGL2RenderingContext, vsSrc: string, fsSrc: string)
   return program;
 }
 
-const previewSize = 512;
-
 function Canvas({
   className,
   shaderTemplate,
   parameters,
+  previewSize = 512,
 }: {
   className?: string,
   shaderTemplate?: string,
   parameters?: BaseNodeParameterDefinition[],
+  previewSize?: number,
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [program, setProgram] = useState<WebGLProgram | null>(null);
@@ -205,7 +205,7 @@ function Canvas({
 
     gl.viewport(0, 0, previewSize, previewSize);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }, [shaderTemplate, parameters, program, src]);
+  }, [shaderTemplate, parameters, program, src, previewSize]);
 
   return (
     <canvas
