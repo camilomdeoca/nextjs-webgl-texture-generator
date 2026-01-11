@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HexColorPicker } from "react-colorful";
-import { createPortal } from "react-dom";
 import { UnmountOnConditionDelayed } from "./unmount-on-condition-delayed";
+import { Overlay } from "./overlay";
 
 type PopoverColorPickerParams = {
   className?: string,
@@ -21,22 +21,7 @@ export const PopoverColorPicker = ({
     };
   }, []);
 
-  const overlayPortal = document.getElementById("overlay-portal");
-
-  if (!overlayPortal) throw new Error("Couldn't get overlay portal element.");
-
   const colorPreviewRef = useRef<HTMLDivElement>(null);
-
-  const [pos, setPos] = useState<{ x: number, y: number } | null>(null);
-
-  useEffect(() => {
-    setPos(() => {
-      const rect = colorPreviewRef.current?.getBoundingClientRect();
-      const x = rect?.x;
-      const y = rect ? rect.y + rect.height : undefined;
-      return x && y ? { x: x, y: y } : null;
-    });
-  }, [isOpen])
 
   const delay = useMemo(() =>
     parseInt(
@@ -62,26 +47,24 @@ export const PopoverColorPicker = ({
         showCondition={isOpen}
         delay={delay}
       >
-        {createPortal(
-          <div>
-            <div
-              style={{top: pos?.y ?? 0, left: pos?.x ?? 0}}
-              className={`
-                absolute z-10
-                ${isOpen
-                  ? "animate-fade-in-opacity"
-                  : "animate-fade-out-opacity pointer-events-none"}
-              `}
-            >
-              <HexColorPicker color={color} onChange={onChange} />
-            </div>
-            {isOpen ? <div
-              onMouseDown={() => setIsOpen(false)}
-              className="fixed inset-0"
-            /> : null}
-          </div>,
-          overlayPortal,
-        )}
+        <Overlay
+          relativeTo={colorPreviewRef}
+        >
+          <div
+            className={`
+              absolute z-50
+              ${isOpen
+                ? "animate-fade-in-opacity"
+                : "animate-fade-out-opacity pointer-events-none"}
+            `}
+          >
+            <HexColorPicker color={color} onChange={onChange} />
+          </div>
+          {isOpen ? <div
+            onMouseDown={() => setIsOpen(false)}
+            className="fixed inset-0 z-40"
+          /> : null}
+        </Overlay>
       </UnmountOnConditionDelayed>
     </div>
   );

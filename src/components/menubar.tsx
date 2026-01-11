@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { UnmountOnConditionDelayed } from "./unmount-on-condition-delayed";
+import { Overlay } from "./overlay";
 
 type MenubarButtonParameters = {
   label: string,
@@ -20,12 +21,15 @@ function MenubarButton({
     ),
     [],
   );
+  
+  const menubarButtonRef = useRef<HTMLButtonElement | null>(null);
 
   return (
     <>
       <button
         className="button px-3 py-1 focus:bg-neutral-700 rounded-md"
         onMouseDown={() => setIsOpen(prev => !prev)}
+        ref={menubarButtonRef}
       >
         {label}
       </button>
@@ -33,29 +37,33 @@ function MenubarButton({
         showCondition={isOpen}
         delay={delay}
       >
-      <div
-        className={`
-          flex flex-col absolute z-10 bg-neutral-800 rounded-md mt-2
-          origin-top-left border border-neutral-700 font-normal
-          ${isOpen
-            ? "animate-fade-in-opacity"
-            : "animate-fade-out-opacity pointer-events-none"}
-        `}
-      >
-        {options.map(({label, callback}, i) => 
-          <button
-            key={i}
-            className="px-3 py-1 hover:bg-neutral-700"
-            onClick={() => {
-              setIsOpen(false);
-              callback();
-            }}
+        <Overlay
+          relativeTo={menubarButtonRef}
+        >
+          <div
+            className={`
+              flex flex-col absolute z-50 bg-neutral-800 rounded-md mt-2
+              origin-top-left border border-neutral-700 font-normal
+              ${isOpen
+                ? "animate-fade-in-opacity"
+                : "animate-fade-out-opacity pointer-events-none"}
+            `}
           >
-            {label}
-          </button>        
-        )}
-      </div>
-      {isOpen && <div onMouseDown={() => setIsOpen(false)} className="fixed inset-0" />}
+            {options.map(({label, callback}, i) => 
+              <button
+                key={i}
+                className="px-3 py-1 hover:bg-neutral-700 text-sm font-medium text-neutral-100"
+                onClick={() => {
+                  setIsOpen(false);
+                  callback();
+                }}
+              >
+                {label}
+              </button>        
+            )}
+          </div>
+          {isOpen && <div onMouseDown={() => setIsOpen(false)} className="fixed inset-0 z-40" />}
+        </Overlay>
       </UnmountOnConditionDelayed>
     </>
   );
