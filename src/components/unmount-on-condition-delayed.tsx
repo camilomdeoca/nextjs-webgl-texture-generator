@@ -12,7 +12,7 @@ export function UnmountOnConditionDelayed({
   delay,
 }: UnmountOnConditionDelayedParams) {
   if (delay === undefined) {
-    delay = 170; // --default-transition-duration value
+    delay = 150; // --default-transition-duration value
   }
 
   const [shouldRender, setShouldRender] = useState(false);
