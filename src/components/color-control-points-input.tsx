@@ -67,6 +67,8 @@ export function ColorControlPointsInput({
     ((this: GlobalEventHandlers, ev: MouseEvent) => unknown) | null
   >(null);
 
+  const [stackingOrder, setStackingOrder] = useState(() => Array.from(values, (_, i) => i))
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleMouseUp = () => {
@@ -92,8 +94,8 @@ export function ColorControlPointsInput({
       lightness: newLightness,
     };
     const newValues = values
-      .toSpliced(controlPointIdx, 1, newControlPoint)
-      .toSorted((a, b) => a.lightness - b.lightness);
+      .toSpliced(controlPointIdx, 1, newControlPoint);
+      // .toSorted((a, b) => a.lightness - b.lightness);
 
     onChange(newValues);
   };
@@ -120,10 +122,10 @@ export function ColorControlPointsInput({
         bg-neutral-900 relative ${className}
       `}
     >
-      {values.map(({ color, lightness }, i) => (
+      {stackingOrder.map((i, inStackIdx) => (
         <div
           key={i}
-          style={{ translate: `0 ${(1.0 - lightness)*9.375}rem` }}
+          style={{ translate: `0 ${(1.0 - values[i].lightness)*9.375}rem` }}
           className={`
             absolute flex flex-row gap-1 w-full p-1 pointer-events-none
           `}
@@ -150,6 +152,12 @@ export function ColorControlPointsInput({
               `}
               onMouseDown={() => {
                 setDragging(true);
+                setStackingOrder(prev => {
+                  const newOrder = [...prev];
+                  newOrder.splice(inStackIdx, 1);
+                  newOrder.push(prev[inStackIdx]);
+                  return newOrder;
+                })
                 setSavedOnMouseMove(document.onmousemove);
                 setSavedOnMouseUp(document.onmouseup);
                 document.onmousemove = makeMouseMoveHandler(i);
@@ -162,15 +170,15 @@ export function ColorControlPointsInput({
                   min-w-0 grow border border-neutral-700 rounded-md py-0.5
                   px-1 focus:outline focus:outline-neutral-400
                 `}
-                color={color}
+                color={values[i].color}
                 onChange={(newColor) => {
-                  onChange(values.toSpliced(i, 1, { color: newColor, lightness }));
+                  onChange(values.toSpliced(i, 1, { color: newColor, lightness: values[i].lightness }));
                 }}
               />
               <PopoverColorPicker
-                color={color}
+                color={values[i].color}
                 onChange={(newColor) => {
-                  onChange(values.toSpliced(i, 1, { color: newColor, lightness }));
+                  onChange(values.toSpliced(i, 1, { color: newColor, lightness: values[i].lightness }));
                 }}
               />
             </div>
@@ -201,9 +209,13 @@ export function ColorControlPointsInput({
             const lightness = 1 - (relativeYPos / rect.height);
             if (lightness > 1.0 || lightness < 0.0)
               throw new Error("Click in canvas outside the canvas?");
-            const newValues = values
-              .toSpliced(0, 0, { color: getColorAtLightness(values, lightness) ?? "#000000", lightness, });
-            newValues.sort((a, b) => a.lightness - b.lightness);
+            const newValues = [...values]
+            newValues.push({
+              color: getColorAtLightness(values, lightness) ?? "#000000",
+              lightness,
+            });
+            setStackingOrder(prev => [...prev, prev.length]);
+            // newValues.sort((a, b) => a.lightness - b.lightness);
             onChange(newValues)
           }}
         />
