@@ -7,6 +7,7 @@ import { useShallow } from "zustand/shallow";
 import { ColorControlPointsInput } from "@/components/color-control-points-input";
 import { PopoverColorPicker } from "@/components/popover-color-picker";
 import { HexColorInput } from "react-colorful";
+import { NumberInput } from "@/components/number-input";
 
 function BaseNode(props: NodeProps) {
   const id = props.id;
@@ -33,17 +34,15 @@ function BaseNode(props: NodeProps) {
       return (
         <label key={param.name}>
           <span className="block text-left">{param.name}</span>
-          <input
+          <NumberInput
             className="w-full nodrag"
-            id="seed"
-            type="number"
             step={param.settings.step}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNodeValue(
+            onChange={value => setNodeValue(
               id,
               i,
               {
                 inputType: param.inputType,
-                value: (e.target.value !== "" ? parseFloat(e.target.value) : undefined) ?? param.value,
+                value,
               },
             )}
             value={value.value}
