@@ -43,7 +43,7 @@ function BaseNode(props: NodeProps) {
               i,
               {
                 inputType: param.inputType,
-                value: parseFloat(e.target.value) ?? param.value,
+                value: (e.target.value !== "" ? parseFloat(e.target.value) : undefined) ?? param.value,
               },
             )}
             value={value.value}
