@@ -187,7 +187,14 @@ export function ColorControlPointsInput({
                 leading-none text-lg cursor-pointer hover:bg-neutral-700
                 rounded-md pt-px px-0.5
               `}
-              onClick={() => onChange(values.toSpliced(i, 1))}
+              onClick={() => {
+                setStackingOrder(prev => {
+                  return prev
+                    .toSpliced(inStackIdx, 1)
+                    .map(elem => elem > i ? elem - 1 : elem);
+                })
+                onChange(values.toSpliced(i, 1));
+              }}
             >✕</button>
           </div>
         </div>
