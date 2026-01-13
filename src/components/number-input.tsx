@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 type NumberInputParams = {
   className?: string,
@@ -62,6 +62,11 @@ export function NumberInput({
   const holdTimeout = useRef<NodeJS.Timeout | null>(null);
   const holdInterval = useRef<NodeJS.Timeout | null>(null);
 
+  const stopRepeating = useCallback(() => {
+    if (holdTimeout.current) clearTimeout(holdTimeout.current);
+    if (holdInterval.current) clearInterval(holdInterval.current);
+  }, []);
+
   return <div className={className}>
     <div className={`
       flex flex-row gap-1 w-full
@@ -104,11 +109,17 @@ export function NumberInput({
               }, 100);
             }, 400);
           }}
-          onMouseUp={() => {
-            if (holdTimeout.current) clearTimeout(holdTimeout.current);
-            if (holdInterval.current) clearInterval(holdInterval.current);
-          }}
-        ><Image className="h-full w-full" src="keyboard_arrow_up.svg" alt="" width={5} height={5}/></button>
+          onMouseUp={stopRepeating}
+          onBlur={stopRepeating}
+        >
+          <Image
+            className="h-full w-full select-none pointer-events-none"
+            src="keyboard_arrow_up.svg"
+            alt=""
+            width={5}
+            height={5}
+          />
+        </button>
         <button
           className={`
             cursor-pointer hover:bg-neutral-700 m-auto grow transition-colors
@@ -121,11 +132,17 @@ export function NumberInput({
               }, 100);
             }, 400);
           }}
-          onMouseUp={() => {
-            if (holdTimeout.current) clearTimeout(holdTimeout.current);
-            if (holdInterval.current) clearInterval(holdInterval.current);
-          }}
-        ><Image className="h-full w-full" src="keyboard_arrow_down.svg" alt="" width={5} height={5}/></button>
+          onMouseUp={stopRepeating}
+          onBlur={stopRepeating}
+        >
+          <Image
+            className="h-full w-full select-none pointer-events-none"
+            src="keyboard_arrow_down.svg"
+            alt=""
+            width={5}
+            height={5}
+          />
+        </button>
       </div>
     </div>
   </div>;
