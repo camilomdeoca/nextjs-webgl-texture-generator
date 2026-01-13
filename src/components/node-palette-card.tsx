@@ -4,6 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 import Canvas from "./canvas";
 import {CSS} from '@dnd-kit/utilities';
 import { BaseNodeParameterDefinition } from "@/nodes/store";
+import Image from "next/image";
 
 type NodeCardParameters = {
   id: string,
@@ -42,11 +43,19 @@ export function NodePaletteCard({
       {...listeners}
       {...attributes}
     >
-      <Canvas
-        className="border border-neutral-700 rounded-sm"
-        shaderTemplate={shaderTemplate}
-        parameters={parameters}
-      />
+      {parameters
+        ? <Canvas
+          className="border border-neutral-700 rounded-sm"
+          shaderTemplate={shaderTemplate}
+          parameters={parameters}
+        />
+        : <Image
+          className="w-full"
+          src={`./node_icons/${keyName}.png`}
+          alt=""
+          width={50}
+          height={50}
+        />}
       <div className="text-sm font-normal pt-1 text-center">
         {name}
       </div>
