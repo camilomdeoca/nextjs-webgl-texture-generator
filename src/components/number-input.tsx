@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
 type NumberInputParams = {
   className?: string,
@@ -9,6 +9,7 @@ type NumberInputParams = {
   max?: number,
   step?: number,
   align?: "right" | "left",
+  suffix?: ReactNode,
 };
 
 export function NumberInput({
@@ -19,6 +20,7 @@ export function NumberInput({
   max = +Infinity,
   step = 1,
   align = "left",
+  suffix,
 }: NumberInputParams) {
   if (min > max) throw new Error("NumberInput params error: `min` is higher than `max`.");
 
@@ -79,6 +81,7 @@ export function NumberInput({
           setInputValue(ev.target.value);
         }}
       />
+      {suffix && <div className="pr-1 py-0.5">{suffix}</div>}
       <div className="flex flex-col w-3 border-l border-l-neutral-700">
         <button
           className={`

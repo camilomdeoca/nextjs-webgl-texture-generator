@@ -55,8 +55,8 @@ export function Settings({
               value={nodePreviewSize}
               onChange={setNodePreviewSize}
               align="right"
+              suffix="px"
             />
-            <span>px</span>
           </div>
         </label>
       </div>
