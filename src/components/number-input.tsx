@@ -20,7 +20,10 @@ export function NumberInput({
 }: NumberInputParams) {
   if (min > max) throw new Error("NumberInput params error: `min` is higher than `max`.");
 
-  const [inputValue, setInputValue] = useState(() => value?.toLocaleString() ?? "");
+  const [inputValue, setInputValue] = useState(() => {
+    return value?.toLocaleString(undefined, { useGrouping: false }) ?? "";
+  });
+  const [isValid, setIsValid] = useState(true);
 
   useEffect(() => {
     if (value === undefined) return;
@@ -33,7 +36,9 @@ export function NumberInput({
   const stepValue = (stepSigned: number) => {
     setInputValue(prev => {
       const valueAsNumber = parseFloat(prev);
-      return isNaN(valueAsNumber) ? "0" : (valueAsNumber + stepSigned).toLocaleString();
+      return isNaN(valueAsNumber)
+        ? "0"
+        : (valueAsNumber + stepSigned).toLocaleString(undefined, { useGrouping: false });
     });
   };
 
@@ -43,7 +48,9 @@ export function NumberInput({
     // then update inputValue but do not call the onChange function.
     if (isNaN(inputValueAsNumber)) return;
     if (value === undefined || Math.abs(inputValueAsNumber - value) > 1e-12) {
-      onChange?.(inputValueAsNumber);
+      const newIsValid = inputValueAsNumber >= min && inputValueAsNumber <= max;
+      setIsValid(newIsValid);
+      if (newIsValid) onChange?.(inputValueAsNumber);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputValue, onChange]);
@@ -56,6 +63,7 @@ export function NumberInput({
       flex flex-row gap-1 w-full
       border border-neutral-700 rounded-md focus-within:border-neutral-400
       transition-colors overflow-hidden
+      ${isValid ? "border-neutral-700" : "focus-within:border-red-400 border-red-700"}
     `}>
       <input
         className={`
@@ -63,13 +71,11 @@ export function NumberInput({
         `}
         value={inputValue}
         onChange={ev => {
-          const regex = RegExp(`^${min < 0 ? "-" : ""}${max < 0 ? "" : "?"}\\d*\\.?\\d*$`);
+          const regex = RegExp(`^${min < 0 ? `-${max < 0 ? "" : "?"}` : ""}\\d*\\.?\\d*$`);
           if (!regex.test(ev.target.value)) return;
 
-          const valueAsNumber = parseFloat(ev.target.value);
-          if (isNaN(valueAsNumber) || (valueAsNumber >= min && valueAsNumber <= max)) {
-            setInputValue(ev.target.value);
-          }
+          // const valueAsNumber = parseFloat(ev.target.value);
+          setInputValue(ev.target.value);
         }}
       />
       <div className="flex flex-col w-3 border-l border-l-neutral-700">

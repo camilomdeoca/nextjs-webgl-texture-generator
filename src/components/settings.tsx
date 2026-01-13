@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { NumberInput } from './number-input';
 
 type State = {
   nodePreviewSize: number,
@@ -46,20 +47,13 @@ export function Settings({
         <label className="w-full flex flex-row">
           <div className="w-1/2">Node preview size</div>
           <div className="w-1/2 flex flex-row gap-1">
-            <input
-              className="grow text-right"
-              type="number"
+            <NumberInput
+              className="grow"
               min={16}
               max={4096}
               step={1}
               value={nodePreviewSize}
-              onChange={(ev) => {
-                const newNodePreviewSize = parseInt(ev.target.value)
-                if (isNaN(newNodePreviewSize) || !isFinite(newNodePreviewSize)) {
-                  return;
-                }
-                setNodePreviewSize(newNodePreviewSize);
-              }}
+              onChange={setNodePreviewSize}
             />
             <span>px</span>
           </div>
