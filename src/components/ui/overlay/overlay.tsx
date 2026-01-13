@@ -6,7 +6,7 @@ type OverlayProps = {
   relativeTo?: RefObject<HTMLElement | null>,
 };
 
-export function Overlay({
+export default function Overlay({
   children,
   relativeTo,
 }: OverlayProps) {

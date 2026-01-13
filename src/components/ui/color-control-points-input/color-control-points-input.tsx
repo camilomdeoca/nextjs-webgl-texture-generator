@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { hexToRgba, rgbaToHex } from "@/utils/colors";
 import { HexColorInput } from "react-colorful";
-import { PopoverColorPicker } from "./popover-color-picker";
+import { PopoverColorPicker } from "../popover-color-picker";
 
 export type ColorControlPoint = {
   color: string,
@@ -54,7 +54,7 @@ function getColorAtLightness(
   return rgbaToHex(result);
 }
 
-export function ColorControlPointsInput({
+export default function ColorControlPointsInput({
   className,
   values,
   onChange,

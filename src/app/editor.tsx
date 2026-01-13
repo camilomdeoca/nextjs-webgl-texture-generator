@@ -2,8 +2,6 @@
 
 import Menubar from "@/components/menubar";
 import NodesPalette from "@/components/nodes-palette";
-import BaseNode from "@/nodes/base-node";
-import useStore, { loadSerializableStateFromFile } from "@/nodes/store";
 import { DndContext, useDroppable } from "@dnd-kit/core";
 import {
   ReactFlow,
@@ -13,9 +11,11 @@ import {
 import "@xyflow/react/dist/style.css";
 import { ReactNode, useEffect, useId, useState } from "react";
 import { useShallow } from "zustand/shallow";
-import { UnmountOnConditionDelayed } from "@/components/unmount-on-condition-delayed";
-import { Overlay } from "@/components/overlay";
 import { Settings } from "@/components/settings";
+import { BaseNode } from "@/components/nodes/base-node";
+import { loadSerializableStateFromFile, useStore } from "@/nodes/store";
+import { UnmountOnConditionDelayed } from "@/components/ui/unmount-on-condition-delayed";
+import { Overlay } from "@/components/ui/overlay";
 
 type DroppableProperties = {
   id: string;
@@ -140,7 +140,7 @@ export default function Editor() {
           )}
           <ReactFlow
             colorMode="dark"
-            maxZoom={3}
+            maxZoom={5}
             nodeTypes={nodeTypes}
             nodes={nodes}
             edges={edges}

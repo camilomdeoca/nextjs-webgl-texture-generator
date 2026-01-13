@@ -3,7 +3,7 @@
 import { nodeDefinitions } from "@/nodes/definitions";
 import { useMemo } from "react";
 import { prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";
-import { NodePaletteCard } from "./node-palette-card";
+import { NodePaletteCard } from "./nodes/node-palette-card";
 
 type NodesPaletteParameters = {
   className?: string,

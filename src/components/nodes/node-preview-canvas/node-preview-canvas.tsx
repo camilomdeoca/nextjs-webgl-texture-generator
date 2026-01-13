@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import glslUtils from "@/shaders/utils.glsl";
 import { BaseNodeParameterDefinition } from "@/nodes/store";
 import { hexToRgba } from "@/utils/colors";
-import useSettingsStore from "./settings";
+import useSettingsStore from "@/components/settings";
 
 const vsSrc = `#version 300 es
 precision highp float;
@@ -71,7 +71,7 @@ function createProgram(gl: WebGL2RenderingContext, vsSrc: string, fsSrc: string)
   return program;
 }
 
-function Canvas({
+export default function NodePreviewCanvas({
   className,
   shaderTemplate,
   parameters,
@@ -226,5 +226,3 @@ function Canvas({
     />
   );
 };
-
-export default Canvas;

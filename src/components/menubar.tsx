@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { UnmountOnConditionDelayed } from "./unmount-on-condition-delayed";
-import { Overlay } from "./overlay";
+import { UnmountOnConditionDelayed } from "./ui/unmount-on-condition-delayed";
+import { Overlay } from "./ui/overlay";
 
 type MenubarButtonParameters = {
   label: string,

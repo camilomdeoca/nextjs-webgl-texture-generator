@@ -1,8 +1,8 @@
-import Canvas from "@/components/canvas";
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import { ReactNode } from "react";
-import { OneConnectionHandle } from "./one-connection-handle";
-import useStore, { getParametersFromNode, useCustomComparison } from "./store";
+import { OneConnectionHandle } from "../one-connection-handle";
+import { useStore, useCustomComparison, getParametersFromNode } from "@/nodes/store";
+import { NodePreviewCanvas } from "../node-preview-canvas";
 
 export type BaseNodeComponentParameters = {
   nodeProps: NodeProps,
@@ -13,7 +13,7 @@ export type BaseNodeComponentParameters = {
   children?: ReactNode,
 };
 
-export function BaseNodeComponent({
+export default function BaseNodeComponent({
   nodeProps,
   name,
   inputs,
@@ -87,7 +87,7 @@ export function BaseNodeComponent({
         {children}
       </div>
       <div className="p-2.5">
-        <Canvas
+        <NodePreviewCanvas
           shaderTemplate={template}
           parameters={parameters}
         />

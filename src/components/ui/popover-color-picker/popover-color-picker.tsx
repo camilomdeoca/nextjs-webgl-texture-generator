@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { HexColorPicker } from "react-colorful";
-import { UnmountOnConditionDelayed } from "./unmount-on-condition-delayed";
-import { Overlay } from "./overlay";
+import { UnmountOnConditionDelayed } from "../unmount-on-condition-delayed";
+import { Overlay } from "../overlay";
 
 type PopoverColorPickerParams = {
   className?: string,
@@ -9,11 +9,11 @@ type PopoverColorPickerParams = {
   onChange?: (newColor: string) => void,
 };
 
-export const PopoverColorPicker = ({
+export default function PopoverColorPicker({
   className = "",
   color,
   onChange,
-}: PopoverColorPickerParams) => {
+}: PopoverColorPickerParams) {
   const [isOpen, setIsOpen] = useState(false);
   useEffect(() => {
     return () => {

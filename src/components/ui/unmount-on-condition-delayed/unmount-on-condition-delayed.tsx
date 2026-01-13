@@ -6,7 +6,7 @@ type UnmountOnConditionDelayedParams = {
   delay?: number,
 };
 
-export function UnmountOnConditionDelayed({
+export default function UnmountOnConditionDelayed({
   showCondition,
   children,
   delay,

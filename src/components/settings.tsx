@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { NumberInput } from './number-input';
+import { NumberInput } from './ui/number-input';
 
 type State = {
   nodePreviewSize: number,

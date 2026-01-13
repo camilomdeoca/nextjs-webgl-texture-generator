@@ -12,7 +12,7 @@ type NumberInputParams = {
   suffix?: ReactNode,
 };
 
-export function NumberInput({
+export default function NumberInput({
   className = "",
   value,
   onChange,

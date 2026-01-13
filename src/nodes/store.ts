@@ -178,7 +178,7 @@ export function getParametersFromNode(
 }
 
 // this is our useStore hook that we can use in our components to get parts of the store and call actions
-const useStore = create<State & Actions>((set, get) => ({
+export const useStore = create<State & Actions>((set, get) => ({
   nodes: [],
   edges: [],
   viewport: { x: 0, y: 0, zoom: 1 },
@@ -468,5 +468,3 @@ const useStore = create<State & Actions>((set, get) => ({
     }
   },
 }));
-
-export default useStore;

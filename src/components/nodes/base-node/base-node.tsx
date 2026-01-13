@@ -1,15 +1,15 @@
 import { NodeProps } from "@xyflow/react";
-import { BaseNodeComponent } from "./base-node-component";
 import { ChangeEvent } from "react";
-import { nodeDefinitions } from "./definitions";
-import useStore from "./store";
 import { useShallow } from "zustand/shallow";
-import { ColorControlPointsInput } from "@/components/color-control-points-input";
-import { PopoverColorPicker } from "@/components/popover-color-picker";
 import { HexColorInput } from "react-colorful";
-import { NumberInput } from "@/components/number-input";
+import { useStore } from "@/nodes/store";
+import { nodeDefinitions } from "@/nodes/definitions";
+import { PopoverColorPicker } from "@/components/ui/popover-color-picker";
+import { ColorControlPointsInput } from "@/components/ui/color-control-points-input";
+import { BaseNodeComponent } from "../base-node-component";
+import { NumberInput } from "@/components/ui/number-input";
 
-function BaseNode(props: NodeProps) {
+export default function BaseNode(props: NodeProps) {
   const id = props.id;
   // console.log("RENDER NODE");
   const type = useStore(state => state.types.get(id));
@@ -164,5 +164,3 @@ function BaseNode(props: NodeProps) {
     </BaseNodeComponent>
   );
 }
-
-export default BaseNode;

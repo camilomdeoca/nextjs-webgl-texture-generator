@@ -1,10 +1,10 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import Canvas from "./canvas";
 import {CSS} from '@dnd-kit/utilities';
 import { BaseNodeParameterDefinition } from "@/nodes/store";
 import Image from "next/image";
+import { NodePreviewCanvas } from "../node-preview-canvas";
 
 type NodeCardParameters = {
   id: string,
@@ -15,7 +15,7 @@ type NodeCardParameters = {
   parameters?: BaseNodeParameterDefinition[],
 };
 
-export function NodePaletteCard({
+export default function NodePaletteCard({
   id,
   className,
   keyName,
@@ -44,7 +44,7 @@ export function NodePaletteCard({
       {...attributes}
     >
       {parameters
-        ? <Canvas
+        ? <NodePreviewCanvas
           className="border border-neutral-700 rounded-sm"
           shaderTemplate={shaderTemplate}
           parameters={parameters}

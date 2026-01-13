@@ -1,6 +1,6 @@
 import { Handle, HandleProps, useNodeConnections } from "@xyflow/react";
 
-export function OneConnectionHandle(props: HandleProps) {
+export default function OneConnectionHandle(props: HandleProps) {
   const connections = useNodeConnections({
     handleType: props.type,
     handleId: props.id || undefined,
