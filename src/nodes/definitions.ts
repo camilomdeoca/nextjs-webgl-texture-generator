@@ -385,5 +385,38 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
     ],
     inputs: [],
   }],
+  ["checkerboard", {
+    name: "Checkerboard",
+    template: preprocessTemplate(`
+      ivec2 cell = ivec2($UV * vec2($x_cells, $y_cells));
+
+      float color = (cell.x & 1) == (cell.y & 1) ? 1.0 : 0.0;
+      $OUT = vec4(vec3(color), 1.0);
+      $OUT = clamp($OUT, 0.0, 1.0);
+    `),
+    parameters: [
+      {
+        name: "X cells",
+        uniformName: "x_cells",
+        inputType: "number",
+        uniformType: { type: "float", array: false },
+        settings: {
+          step: 1,
+        },
+        value: 2,
+      },
+      {
+        name: "Y cells",
+        uniformName: "y_cells",
+        inputType: "number",
+        uniformType: { type: "float", array: false },
+        settings: {
+          step: 1,
+        },
+        value: 2,
+      },
+    ],
+    inputs: [],
+  }],
 ]);
 export { nodeDefinitions };
