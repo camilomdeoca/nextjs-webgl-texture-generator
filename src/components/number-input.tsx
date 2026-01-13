@@ -40,9 +40,9 @@ export function NumberInput({
   const stepValue = (stepSigned: number) => {
     setInputValue(prev => {
       const valueAsNumber = parseFloat(prev);
-      return isNaN(valueAsNumber)
-        ? "0"
-        : (valueAsNumber + stepSigned).toLocaleString(undefined, { useGrouping: false });
+      if (isNaN(valueAsNumber)) return "0";
+      return ((Math.round(valueAsNumber / stepSigned) + 1) * stepSigned)
+        .toLocaleString(undefined, { useGrouping: false });
     });
   };
 
@@ -76,7 +76,16 @@ export function NumberInput({
         `}
         value={inputValue}
         onChange={ev => {
-          const regex = RegExp(`^${min < 0 ? `-${max < 0 ? "" : "?"}` : ""}\\d*\\.?\\d*$`);
+          const regex = RegExp(
+            "^" +
+            // `-` sign, mandatory if valid range is all negative
+            (min < 0 ? `-${max < 0 ? "" : "?"}` : "") +
+            // Integer part of the number
+            "\\d*" +
+            // Fractional part of the number (if step is not an integer)
+            (Number.isInteger(step) ? "" : "\\.?\\d*") +
+            "$"
+          );
           if (!regex.test(ev.target.value)) return;
           setInputValue(ev.target.value);
         }}
