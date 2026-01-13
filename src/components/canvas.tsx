@@ -129,8 +129,11 @@ function Canvas({
           uniformsSrc,
         );
 
-      setProgram(() => createProgram(gl, vsSrc, finalFsSrc));
+      const program = createProgram(gl, vsSrc, finalFsSrc);
+      setProgram(program);
       setSrc(() => finalFsSrc);
+
+      return () => gl.deleteProgram(program);
     },
     // This should be enough because when the parameters change the template changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
