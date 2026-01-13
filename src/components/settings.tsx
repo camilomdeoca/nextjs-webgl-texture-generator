@@ -54,6 +54,7 @@ export function Settings({
               step={1}
               value={nodePreviewSize}
               onChange={setNodePreviewSize}
+              align="right"
             />
             <span>px</span>
           </div>

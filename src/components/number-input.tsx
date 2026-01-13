@@ -8,6 +8,7 @@ type NumberInputParams = {
   min?: number,
   max?: number,
   step?: number,
+  align?: "right" | "left",
 };
 
 export function NumberInput({
@@ -17,6 +18,7 @@ export function NumberInput({
   min = -Infinity,
   max = +Infinity,
   step = 1,
+  align = "left",
 }: NumberInputParams) {
   if (min > max) throw new Error("NumberInput params error: `min` is higher than `max`.");
 
@@ -68,13 +70,12 @@ export function NumberInput({
       <input
         className={`
           w-full border-0 focus:outline-0 px-1 py-0.5
+          ${align === "left" ? "text-left" : "text-right"}
         `}
         value={inputValue}
         onChange={ev => {
           const regex = RegExp(`^${min < 0 ? `-${max < 0 ? "" : "?"}` : ""}\\d*\\.?\\d*$`);
           if (!regex.test(ev.target.value)) return;
-
-          // const valueAsNumber = parseFloat(ev.target.value);
           setInputValue(ev.target.value);
         }}
       />
