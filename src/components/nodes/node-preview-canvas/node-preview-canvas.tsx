@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
 import glslUtils from "@/shaders/utils.glsl";
 import { BaseNodeParameterDefinition } from "@/nodes/store";
@@ -71,6 +73,8 @@ function createProgram(gl: WebGL2RenderingContext, vsSrc: string, fsSrc: string)
   return program;
 }
 
+let offscreenCanvas: OffscreenCanvas | null = null;
+
 export default function NodePreviewCanvas({
   className,
   shaderTemplate,
@@ -98,7 +102,11 @@ export default function NodePreviewCanvas({
       if (process.env.NODE_ENV === "development") console.log("COMPILE SHADER");
       const canvas = canvasRef.current;
       if (canvas === null) throw new Error("Couldn't get canvas reference.");
-      const gl = canvas.getContext('webgl2');
+
+      if (!offscreenCanvas || offscreenCanvas.width !== previewSize)
+        offscreenCanvas = new OffscreenCanvas(previewSize, previewSize);
+
+      const gl = offscreenCanvas.getContext('webgl2');
       if (gl === null) throw new Error("Couldn't get webgl context.");
 
       if (shaderTemplate === undefined || parameters === undefined) {
@@ -144,7 +152,11 @@ export default function NodePreviewCanvas({
     if (process.env.NODE_ENV === "development") console.log("RE-RENDER");
     const canvas = canvasRef.current;
     if (canvas === null) throw new Error("Couldn't get canvas reference.");
-    const gl = canvas.getContext('webgl2');
+    
+    if (!offscreenCanvas || offscreenCanvas.width !== previewSize)
+      offscreenCanvas = new OffscreenCanvas(previewSize, previewSize);
+
+    const gl = offscreenCanvas.getContext('webgl2');
     if (gl === null) throw new Error("Couldn't get webgl context.");
 
     // Clear the canvas if a node gets disconected or something
@@ -215,6 +227,11 @@ export default function NodePreviewCanvas({
 
     gl.viewport(0, 0, previewSize, previewSize);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    const bitmap = offscreenCanvas.transferToImageBitmap();
+    const bitmapRenderer = canvas.getContext("bitmaprenderer");
+    if (!bitmapRenderer) throw new Error("Error getting bitmaprenderer context.");
+    bitmapRenderer.transferFromImageBitmap(bitmap);
   }, [shaderTemplate, parameters, program, src, previewSize]);
 
   return (
