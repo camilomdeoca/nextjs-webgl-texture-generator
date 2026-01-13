@@ -168,7 +168,7 @@ export function ColorControlPointsInput({
               <HexColorInput
                 className={`
                   min-w-0 grow border border-neutral-700 rounded-md py-0.5
-                  px-1 focus:outline focus:outline-neutral-400
+                  px-1 focus:border-neutral-400 outline-0 transition-colors
                 `}
                 color={values[i].color}
                 onChange={(newColor) => {

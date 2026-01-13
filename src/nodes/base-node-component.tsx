@@ -74,10 +74,11 @@ export function BaseNodeComponent({
     <div
       className={`
         flex flex-col text-center text-xs text-neutral-100
-        w-48 border bg-neutral-800 border-neutral-700 transition-shadow rounded-lg
-        shadow-md shadow-black hover:shadow-center-md hover:shadow-neutral-400 `
-        + (nodeProps.selected ? "outline-2 outline-neutral-400" : undefined)
-      }
+        w-48 border bg-neutral-800 rounded-lg
+        shadow-md shadow-black hover:shadow-center-md hover:shadow-neutral-400
+        outline-0 transition-[border-color,box-shadow]
+        ${nodeProps.selected ? "border-neutral-400" : "border-neutral-700"}
+      `}
     >
       <div className="p-2.5">
         <p className="text-base">{name}</p>
