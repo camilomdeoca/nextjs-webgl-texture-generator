@@ -228,10 +228,9 @@ export default function NodePreviewCanvas({
     gl.viewport(0, 0, previewSize, previewSize);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-    const bitmap = offscreenCanvas.transferToImageBitmap();
-    const bitmapRenderer = canvas.getContext("bitmaprenderer");
+    const bitmapRenderer = canvas.getContext("2d");
     if (!bitmapRenderer) throw new Error("Error getting bitmaprenderer context.");
-    bitmapRenderer.transferFromImageBitmap(bitmap);
+    bitmapRenderer.drawImage(offscreenCanvas, 0, 0);
   }, [shaderTemplate, parameters, program, src, previewSize]);
 
   return (
