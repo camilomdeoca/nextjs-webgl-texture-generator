@@ -73,7 +73,7 @@ function createProgram(gl: WebGL2RenderingContext, vsSrc: string, fsSrc: string)
   return program;
 }
 
-let offscreenCanvas: OffscreenCanvas | null = null;
+let globalOffscreenCanvas: OffscreenCanvas | null = null;
 
 export default function NodePreviewCanvas({
   className,
@@ -88,6 +88,7 @@ export default function NodePreviewCanvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [program, setProgram] = useState<WebGLProgram | null>(null);
+  const [offscreenCanvas, setOffscreenCanvas] = useState<OffscreenCanvas | null>(null);
   const [src, setSrc] = useState<string | null>(null);
 
   const defaultPreviewSize = useSettingsStore(state => state.nodePreviewSize);
@@ -103,10 +104,10 @@ export default function NodePreviewCanvas({
       const canvas = canvasRef.current;
       if (canvas === null) throw new Error("Couldn't get canvas reference.");
 
-      if (!offscreenCanvas || offscreenCanvas.width !== previewSize)
-        offscreenCanvas = new OffscreenCanvas(previewSize, previewSize);
+      if (!globalOffscreenCanvas || globalOffscreenCanvas.width !== previewSize)
+        globalOffscreenCanvas = new OffscreenCanvas(previewSize, previewSize);
 
-      const gl = offscreenCanvas.getContext('webgl2');
+      const gl = globalOffscreenCanvas.getContext('webgl2');
       if (gl === null) throw new Error("Couldn't get webgl context.");
 
       if (shaderTemplate === undefined || parameters === undefined) {
@@ -139,36 +140,33 @@ export default function NodePreviewCanvas({
 
       const program = createProgram(gl, vsSrc, finalFsSrc);
       setProgram(program);
+      setOffscreenCanvas(globalOffscreenCanvas);
       setSrc(() => finalFsSrc);
 
       // return () => gl.deleteProgram(program);
     },
     // This should be enough because when the parameters change the template changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [shaderTemplate],
+    [shaderTemplate, previewSize],
   );
 
   useEffect(() => {
     if (process.env.NODE_ENV === "development") console.log("RE-RENDER");
     const canvas = canvasRef.current;
     if (canvas === null) throw new Error("Couldn't get canvas reference.");
-    
-    if (!offscreenCanvas || offscreenCanvas.width !== previewSize)
-      offscreenCanvas = new OffscreenCanvas(previewSize, previewSize);
-
-    const gl = offscreenCanvas.getContext('webgl2');
-    if (gl === null) throw new Error("Couldn't get webgl context.");
-
+   
     // Clear the canvas if a node gets disconected or something
     if (program === null || shaderTemplate === undefined || parameters === undefined) {
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
       const ctx2d = canvas.getContext("2d");
       if (!ctx2d) throw new Error("Error getting canvas 2d context.");
       ctx2d.fillStyle = "#000000ff";
       ctx2d.fillRect(0, 0, canvas.width, canvas.height);
       return;
     }
+   
+    if (!offscreenCanvas) return;
+    const gl = offscreenCanvas.getContext('webgl2');
+    if (gl === null) throw new Error("Couldn't get webgl context.");
 
     gl.useProgram(program);
 
@@ -233,7 +231,7 @@ export default function NodePreviewCanvas({
     const ctx2d = canvas.getContext("2d");
     if (!ctx2d) throw new Error("Error getting canvas 2d context.");
     ctx2d.drawImage(offscreenCanvas, 0, 0);
-  }, [shaderTemplate, parameters, program, src, previewSize]);
+  }, [shaderTemplate, parameters, program, src, previewSize, offscreenCanvas]);
 
   return (
     <canvas
