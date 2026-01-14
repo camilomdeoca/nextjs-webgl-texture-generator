@@ -406,11 +406,7 @@ export const useStore = create<State & Actions>((set, get) => ({
       const file = input.files?.[0];
       if (!file) return;
       const serializableState = await loadSerializableStateFromFile(file);
-      if (serializableState) set({
-        nodes: serializableState.nodes,
-        edges: serializableState.edges,
-        viewport: serializableState.viewport,
-      });
+      if (serializableState) get().loadSerializableState(serializableState);
     };
 
     input.click();
