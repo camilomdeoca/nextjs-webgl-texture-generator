@@ -2,7 +2,6 @@
 
 import { nodeDefinitions } from "@/nodes/definitions";
 import { useMemo } from "react";
-import { prependUniformVariablesWithId } from "@/glsl-parsing/glsl-templates";
 import { NodePaletteCard } from "./nodes/node-palette-card";
 
 type NodesPaletteParameters = {
@@ -13,32 +12,8 @@ export default function NodesPalette({
   className,
 }: NodesPaletteParameters) {
   const data = useMemo(() => {
-    const result = nodeDefinitions.entries().map(([key, { name, template, parameters, inputs }]) => {
-      if (inputs.length > 0) {
-        return {
-          name,
-          key,
-          template: undefined,
-          parameters: undefined,
-        };
-      }
-      const definitions = parameters.map((param) => ({
-        id: "",
-        ...param,
-      }))
-      
-      const templateProcessed = prependUniformVariablesWithId(
-        "",
-        template,
-        parameters.map(({ uniformName }) => uniformName),
-      );
-
-      return {
-        key,
-        name, 
-        template: templateProcessed,
-        parameters: definitions,
-      };
+    const result = nodeDefinitions.entries().map(([key, { name }]) => {
+      return { key, name };
     }).toArray();
 
     return result;
@@ -53,14 +28,12 @@ export default function NodesPalette({
         ${className}
       `}
     >
-      {data.map(({ key, name, template, parameters }) => (
+      {data.map(({ key, name }) => (
         <NodePaletteCard
           id={`${key}_palette_card`}
           key={key}
           keyName={key}
           name={name}
-          shaderTemplate={template}
-          parameters={parameters}
         />
       ))}
     </div>

@@ -1,5 +1,4 @@
 import { NodeProps } from "@xyflow/react";
-import { ChangeEvent } from "react";
 import { useShallow } from "zustand/shallow";
 import { HexColorInput } from "react-colorful";
 import { useStore } from "@/nodes/store";
