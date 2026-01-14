@@ -206,12 +206,10 @@ export default function NodePreviewCanvas({
             const locLightness = gl.getUniformLocation(program, lightnessUniformName);
 
             if (!locColor) {
-              console.log(src);
-              throw new Error(`Couldn't get color location on idx: ${i}. \`${colorUniformName}\`.`);
+              console.warn(`Couldn't get color location on idx: ${i}. \`${colorUniformName}\`.`);
             }
             if (!locLightness) {
-              console.log(src);
-              throw new Error(`Couldn't get lightness location on idx: ${i}. \`${lightnessUniformName}\`.`);
+              console.warn(`Couldn't get lightness location on idx: ${i}. \`${lightnessUniformName}\`.`);
             }
 
             gl.uniform4f(locColor, ...(hexToRgba(param.value[i].color) ?? [0, 0, 0, 1]));
