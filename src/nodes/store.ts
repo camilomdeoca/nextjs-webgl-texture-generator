@@ -29,9 +29,7 @@ type SerializableState = {
   edges: Edge[];
   viewport: Viewport;
 
-  inputNodes: [string, string[]][];
   values: [string, ParameterValue[]][];
-  templates: [string, string][];
   types: [string, string][];
 };
 
@@ -93,9 +91,7 @@ function isSerializableState(flow: unknown): flow is SerializableState {
 
   if (!("nodes" in flow) || !Array.isArray(flow.nodes)) return false;
   if (!("edges" in flow) || !Array.isArray(flow.edges)) return false;
-  if (!("inputNodes" in flow) || !Array.isArray(flow.inputNodes)) return false;
   if (!("values" in flow) || !Array.isArray(flow.values)) return false;
-  if (!("templates" in flow) || !Array.isArray(flow.templates)) return false;
   if (!("types" in flow) || !Array.isArray(flow.types)) return false;
   if (!("edges" in flow) || !Array.isArray(flow.edges)) return false;
   if (!("viewport" in flow) || typeof flow.viewport !== "object" || flow.viewport === null) return false;
@@ -118,13 +114,7 @@ function serializableStateFromState(state: State & Actions): SerializableState {
     nodes: state.nodes,
     edges: state.edges,
     viewport: state.viewport,
-    inputNodes: state.inputNodes.entries()
-      .map<[string, string[]]>(
-        ([id, inputs]) => [id, inputs.values().toArray()]
-      )
-      .toArray(),
     values: state.values.entries().toArray(),
-    templates: state.templates.entries().toArray(),
     types: state.types.entries().toArray(),
   };
 }
@@ -364,9 +354,7 @@ export const useStore = create<State & Actions>((set, get) => ({
     const nodes = serializableState.nodes;
     const edges = serializableState.edges;
     const viewport = serializableState.viewport;
-    const inputNodes = new Map(serializableState.inputNodes.map(([id, inputs]) => [id, new Set(inputs)]));
     const values = new Map(serializableState.values);
-    const templates = new Map(serializableState.templates);
     const types = new Map(serializableState.types);
 
     // If a node doesnt have a parameter or its the wrong type then set parameters to default
@@ -393,7 +381,20 @@ export const useStore = create<State & Actions>((set, get) => ({
       }
     }
 
-    set({ nodes, edges, viewport, inputNodes, values, templates, types });
+    set({ nodes, edges, viewport, values, types });
+
+    for (const node of nodes) {
+      const type = types.get(node.id);
+      if (!type) throw new Error(`Node: ${node.id} has no type.`);
+
+      const definition = nodeDefinitions.get(type);
+      if (!definition) throw new Error(`Invalid node type: ${type}.`);
+
+      if (definition.inputs.length === 0) {
+        get().updateInputNodesFromNode(node.id);
+        get().updateTemplatesFromNode(node.id);
+      }
+    }
   },
   save: () => {
     const serializableState = serializableStateFromState(get());
