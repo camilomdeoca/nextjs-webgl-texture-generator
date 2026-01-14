@@ -67,7 +67,6 @@ export default function BaseNode(props: NodeProps) {
             max={param.settings.max}
             step={param.settings.step}
             showValue
-            showRange
             onChange={value => setNodeValue(
               id,
               i,
