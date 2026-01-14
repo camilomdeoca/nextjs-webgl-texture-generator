@@ -8,6 +8,7 @@ type SliderParams = {
   max: number,
   step?: number,
   showValue?: boolean,
+  showRange?: boolean,
 };
 
 export default function Slider({
@@ -18,6 +19,7 @@ export default function Slider({
   max,
   step,
   showValue = false,
+  showRange = false,
 }: SliderParams) {
   if (min > max) {
     throw new Error("Slider params error: `min` is higher than `max`.");
@@ -60,7 +62,7 @@ export default function Slider({
   const progress = ((value - min) / (max - min)) * 100;
 
   return <div className={className}>
-    <div className="w-full flex flex-row gap-1 items-center">
+    <div className="w-full flex flex-col items-center">
       <div
         ref={ref}
         className="w-full h-4 relative cursor-pointer group"
@@ -137,23 +139,12 @@ export default function Slider({
           )}
         </div>}
       </div>
-      {/* showValue && <span className="w-16 text-xs top-1/2">
-        {value.toLocaleString(
-          undefined,
-          {
-            useGrouping: false,
-            minimumFractionDigits: (step === undefined || step <= 0)
-              ? undefined
-              : Math.floor(-Math.log10(step)),
-            maximumFractionDigits: (step === undefined || step <= 0)
-              ? undefined
-              : Math.floor(-Math.log10(step)),
-            maximumSignificantDigits: (step === undefined || step <= 0)
-              ? 3
-              : undefined,
-          },
-        )}
-      </span> */}
+      {showRange && <div
+        className="flex flex-row justify-between w-full text-xs"
+      >
+        <div>{min}</div>
+        <div>{max}</div>
+      </div>}
     </div>
   </div>;
 }
