@@ -200,13 +200,20 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
   ["warp", {
     name: "Warp",
     template: preprocessTemplate(`
-      vec4 warperValue;
-      vec2 uv = $UV;
-      $INPUT0(warperValue, uv)
-      vec2 d = vec2(dFdx(warperValue.r), dFdy(warperValue.r));
+      vec4 warperSample, warperSampleX, warperSampleY;
+      
+      vec2 sampleUv = $UV;
+      $INPUT0(warperSample, sampleUv)
+      sampleUv = $UV + vec2($derivation_step, 0);
+      $INPUT0(warperSampleX, sampleUv)
+      sampleUv = $UV + vec2(0, $derivation_step);
+      $INPUT0(warperSampleY, sampleUv)
+
+      float dx = (rgb2hsv(warperSample.rgb).z - rgb2hsv(warperSampleX.rgb).z) / $derivation_step;
+      float dy = (rgb2hsv(warperSample.rgb).z - rgb2hsv(warperSampleY.rgb).z) / $derivation_step;
 
       vec4 outputColor;
-      uv += d * $strength;
+      vec2 uv = $UV + vec2(dx, dy) * $strength * 0.005;
       $INPUT1(outputColor, uv)
 
       $OUT = outputColor;
@@ -224,6 +231,18 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
           step: 0.001,
         },
         value: 1.0,
+      },
+      {
+        name: "Derivation step",
+        uniformName: "derivation_step",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.0001,
+          max: 0.05,
+          step: 0,
+        },
+        value: 0.001,
       },
     ],
     inputs: [

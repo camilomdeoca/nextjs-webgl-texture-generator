@@ -52,7 +52,7 @@ export default function Slider({
     if (sliderProgress < 0.0) sliderProgress = 0.0;
 
     let newValue = min + sliderProgress * (max - min);
-    if (step !== undefined) {
+    if (step !== undefined && step !== 0) {
       newValue = Math.round(newValue / step) * step;
     }
 
@@ -122,6 +122,7 @@ export default function Slider({
             min={min}
             max={max}
             step={step}
+            readOnly
           />
           {showValue && <div
             style={{ left: `${progress}%` }}
