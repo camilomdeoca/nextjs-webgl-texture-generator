@@ -141,7 +141,7 @@ export default function NodePreviewCanvas({
       setProgram(program);
       setSrc(() => finalFsSrc);
 
-      return () => gl.deleteProgram(program);
+      // return () => gl.deleteProgram(program);
     },
     // This should be enough because when the parameters change the template changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
