@@ -163,6 +163,10 @@ export default function NodePreviewCanvas({
     if (program === null || shaderTemplate === undefined || parameters === undefined) {
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
       gl.clear(gl.COLOR_BUFFER_BIT);
+      const ctx2d = canvas.getContext("2d");
+      if (!ctx2d) throw new Error("Error getting canvas 2d context.");
+      ctx2d.fillStyle = "#000000ff";
+      ctx2d.fillRect(0, 0, canvas.width, canvas.height);
       return;
     }
 
@@ -226,9 +230,9 @@ export default function NodePreviewCanvas({
     gl.viewport(0, 0, previewSize, previewSize);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-    const bitmapRenderer = canvas.getContext("2d");
-    if (!bitmapRenderer) throw new Error("Error getting bitmaprenderer context.");
-    bitmapRenderer.drawImage(offscreenCanvas, 0, 0);
+    const ctx2d = canvas.getContext("2d");
+    if (!ctx2d) throw new Error("Error getting canvas 2d context.");
+    ctx2d.drawImage(offscreenCanvas, 0, 0);
   }, [shaderTemplate, parameters, program, src, previewSize]);
 
   return (
