@@ -361,15 +361,39 @@ export const useStore = create<State & Actions>((set, get) => ({
   },
 
   loadSerializableState: (serializableState) => {
-    set({
-      nodes: serializableState.nodes,
-      edges: serializableState.edges,
-      viewport: serializableState.viewport,
-      inputNodes: new Map(serializableState.inputNodes.map(([id, inputs]) => [id, new Set(inputs)])),
-      values: new Map(serializableState.values),
-      templates: new Map(serializableState.templates),
-      types: new Map(serializableState.types),
-    });
+    const nodes = serializableState.nodes;
+    const edges = serializableState.edges;
+    const viewport = serializableState.viewport;
+    const inputNodes = new Map(serializableState.inputNodes.map(([id, inputs]) => [id, new Set(inputs)]));
+    const values = new Map(serializableState.values);
+    const templates = new Map(serializableState.templates);
+    const types = new Map(serializableState.types);
+
+    // If a node doesnt have a parameter or its the wrong type then set parameters to default
+    for (const node of nodes) {
+      const type = types.get(node.id);
+      if (!type) throw new Error(`Node: ${node.id} has no type.`);
+
+      const definition = nodeDefinitions.get(type);
+      if (!definition) throw new Error(`Invalid node type: ${type}.`);
+
+      const nodeValues = values.get(node.id);
+      if (nodeValues === undefined) throw new Error(`Node: ${node.id} has no values`);
+
+      if (
+        nodeValues.length !== definition.parameters.length
+        || nodeValues.some(
+          (nodeValue, i) => nodeValue.inputType !== definition.parameters[i].inputType
+        )
+      ) {
+        values.set(
+          node.id,
+          definition.parameters.map(p => distributivePick(p, ["inputType", "value"])),
+        )
+      }
+    }
+
+    set({ nodes, edges, viewport, inputNodes, values, templates, types });
   },
   save: () => {
     const serializableState = serializableStateFromState(get());
