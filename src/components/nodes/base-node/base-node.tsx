@@ -8,6 +8,7 @@ import { PopoverColorPicker } from "@/components/ui/popover-color-picker";
 import { ColorControlPointsInput } from "@/components/ui/color-control-points-input";
 import { BaseNodeComponent } from "../base-node-component";
 import { NumberInput } from "@/components/ui/number-input";
+import { Slider } from "@/components/ui/slider";
 
 export default function BaseNode(props: NodeProps) {
   const id = props.id;
@@ -60,19 +61,18 @@ export default function BaseNode(props: NodeProps) {
       return (
         <label key={param.name}>
           <span className="block text-left nodrag">{param.name}</span>
-          <input
-            className="w-full nodrag accent-neutral-400"
-            id="seed"
-            type="range"
+          <Slider
+            className="w-full nodrag"
             min={param.settings.min}
             max={param.settings.max}
             step={param.settings.step}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNodeValue(
+            showValue
+            onChange={value => setNodeValue(
               id,
               i,
               {
                 inputType: param.inputType,
-                value: parseFloat(e.target.value) ?? param.value,
+                value,
               },
             )}
             value={value.value}
