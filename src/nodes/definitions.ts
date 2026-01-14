@@ -142,7 +142,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         else
           weight *= (1.0 - $octave_weight_relation) / (1.0 - pow($octave_weight_relation, float($octaves)));
 
-        value += simplex3d(vec3($UV, $seed) * $scale * pow(2.0, float(octave_idx))) * weight;
+        value += simplex3d(vec3($UV, $seed) * vec3($scale_x, $scale_y, 1.0) * pow(2.0, float(octave_idx))) * weight;
       }
       $OUT = vec4(vec3(value * 0.5 + 0.5), 1.0);
       $OUT = clamp($OUT, 0.0, 1.0);
@@ -159,8 +159,20 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         value: 0.0,
       },
       {
-        name: "Scale",
-        uniformName: "scale",
+        name: "Scale X",
+        uniformName: "scale_x",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 1,
+          max: 100,
+          step: 1,
+        },
+        value: 10.0,
+      },
+      {
+        name: "Scale Y",
+        uniformName: "scale_y",
         inputType: "slider",
         uniformType: { type: "float", array: false },
         settings: {
@@ -349,7 +361,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         else
           weight *= (1.0 - $octave_weight_relation) / (1.0 - pow($octave_weight_relation, float($octaves)));
 
-        value += voronoi($UV * $scale * pow(2.0, float(octave_idx)), $seed) * weight;
+        value += voronoi($UV * vec2($scale_x, $scale_y) * pow(2.0, float(octave_idx)), $seed) * weight;
       }
       $OUT = vec4(vec3(value), 1.0);
       $OUT = clamp($OUT, 0.0, 1.0);
@@ -366,8 +378,20 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         value: 0.0,
       },
       {
-        name: "Scale",
-        uniformName: "scale",
+        name: "Scale X",
+        uniformName: "scale_x",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 1,
+          max: 100,
+          step: 1,
+        },
+        value: 10.0,
+      },
+      {
+        name: "Scale Y",
+        uniformName: "scale_y",
         inputType: "slider",
         uniformType: { type: "float", array: false },
         settings: {
