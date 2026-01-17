@@ -398,7 +398,7 @@ export const useStore = create<State & Actions>((set, get) => ({
   },
   save: () => {
     const serializableState = serializableStateFromState(get());
-    localStorage.setItem(flowKey, JSON.stringify(serializableState));
+    localStorage.setItem(flowKey, JSON.stringify(serializableState, null, 2));
   },
   load: () => {
     (async () => {
@@ -414,7 +414,7 @@ export const useStore = create<State & Actions>((set, get) => ({
   },
   export: () => {
     const serializableState = serializableStateFromState(get());
-    const blob = new Blob([JSON.stringify(serializableState)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(serializableState, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement("a");
