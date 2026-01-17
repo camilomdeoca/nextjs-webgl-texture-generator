@@ -133,6 +133,8 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
   ["simplex", {
     name: "Simplex",
     template: preprocessTemplate(`
+      const float PI = 3.14159265358979323846;
+      const float TAU = 2.0*PI;
       float value = 0.0;
       for (uint octave_idx = 0u; octave_idx < $octaves; octave_idx++)
       {
@@ -142,7 +144,21 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         else
           weight *= (1.0 - $octave_weight_relation) / (1.0 - pow($octave_weight_relation, float($octaves)));
 
-        value += simplex3d(vec3($UV, $seed) * vec3($scale_x, $scale_y, 1.0) * pow(2.0, float(octave_idx))) * weight;
+        vec4 torusPoint;
+        vec2 scale = vec2($scale_x, $scale_y) * pow(2.0, float(octave_idx));
+
+        vec2 x_offset = vec2(-1.0, 1.0);
+        vec2 y_offset = vec2(-1.0, 1.0);
+
+        float dx = (x_offset.x - x_offset.y) * scale.x;
+        float dy = (y_offset.x - y_offset.y) * scale.y;
+
+        torusPoint.x = x_offset.x - cos(TAU * $UV.s) * dx / TAU;
+	      torusPoint.y = y_offset.x - cos(TAU * $UV.t) * dy / TAU;
+	      torusPoint.z = x_offset.x - sin(TAU * $UV.s) * dx / TAU;
+	      torusPoint.w = y_offset.x - sin(TAU * $UV.t) * dy / TAU;
+        torusPoint.w += $seed;
+        value += snoise(torusPoint) * weight;
       }
       $OUT = vec4(vec3(value * 0.5 + 0.5), 1.0);
       $OUT = clamp($OUT, 0.0, 1.0);
@@ -154,7 +170,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         inputType: "number",
         uniformType: { type: "float", array: false },
         settings: {
-          step: 0.001,
+          step: 0.05,
         },
         value: 0.0,
       },
