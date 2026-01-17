@@ -8,7 +8,7 @@ type State = {
 };
 
 const useSettingsStore = create<State>((set) => ({
-  nodePreviewSize: 1024,
+  nodePreviewSize: 256,
   setNodePreviewSize: (nodePreviewSize) => {
     set({ nodePreviewSize });
   },
