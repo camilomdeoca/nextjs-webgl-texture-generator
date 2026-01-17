@@ -106,7 +106,7 @@ export default function BaseNode(props: NodeProps) {
               )}
             />
             <PopoverColorPicker
-              className="nodrag"
+              className="nodrag w-8"
               onChange={(color) => setNodeValue(
                 id,
                 i,
