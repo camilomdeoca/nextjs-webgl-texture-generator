@@ -28,7 +28,7 @@ export default function PopoverColorPicker({
       <div
         style={{backgroundColor: color}}
         className={`
-          w-8 min-h-full flex-none border border-neutral-700 rounded-md
+          w-full min-h-full flex-none border border-neutral-700 rounded-md
         `}
         onClick={() => setIsOpen(true)}
         ref={colorPreviewRef}

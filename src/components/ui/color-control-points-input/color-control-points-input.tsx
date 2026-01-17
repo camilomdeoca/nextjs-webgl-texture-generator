@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { hexToRgba, rgbaToHex } from "@/utils/colors";
 import { HexColorInput } from "react-colorful";
 import { PopoverColorPicker } from "../popover-color-picker";
+import Image from "next/image";
 
 export type ColorControlPoint = {
   color: string,
@@ -147,7 +148,7 @@ export default function ColorControlPointsInput({
           >
             <div
               className={`
-                nodrag pt-[calc(1.125*var(--spacing))] leading-none text-base
+                nodrag
                 ${dragging ? "cursor-grabbing" : "cursor-grab"}
               `}
               onMouseDown={() => {
@@ -163,7 +164,15 @@ export default function ColorControlPointsInput({
                 document.onmousemove = makeMouseMoveHandler(i);
                 document.onmouseup = handleMouseUp;
               }}
-            >⠿</div>
+            > 
+              <Image
+                className="h-full aspect-square w-12 select-none pointer-events-none"
+                src="drag_indicator.svg"
+                alt=""
+                width={5}
+                height={5}
+              />
+            </div>
             <div className="grow min-w-0 flex flex-row gap-1">
               <HexColorInput
                 className={`
@@ -176,6 +185,7 @@ export default function ColorControlPointsInput({
                 }}
               />
               <PopoverColorPicker
+                className="w-16"
                 color={values[i].color}
                 onChange={(newColor) => {
                   onChange(values.toSpliced(i, 1, { color: newColor, lightness: values[i].lightness }));
@@ -185,7 +195,7 @@ export default function ColorControlPointsInput({
             <button
               className={`
                 leading-none text-lg cursor-pointer hover:bg-neutral-700
-                rounded-md pt-px px-0.5
+                rounded-md px-0.5
               `}
               onClick={() => {
                 setStackingOrder(prev => {
@@ -195,7 +205,15 @@ export default function ColorControlPointsInput({
                 })
                 onChange(values.toSpliced(i, 1));
               }}
-            >✕</button>
+            >
+              <Image
+                className="h-full aspect-square w-12 select-none pointer-events-none"
+                src="close.svg"
+                alt=""
+                width={5}
+                height={5}
+              />
+            </button>
           </div>
         </div>
       ))}

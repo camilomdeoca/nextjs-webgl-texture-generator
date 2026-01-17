@@ -1,5 +1,6 @@
-import { create } from 'zustand';
-import { NumberInput } from './ui/number-input';
+import { create } from "zustand";
+import { NumberInput } from "./ui/number-input";
+import Image from "next/image";
 
 type State = {
   nodePreviewSize: number,
@@ -36,11 +37,19 @@ export function Settings({
         <div className="text-lg">Settings</div>
         <button
           className={`
-            leading-none text-2xl cursor-pointer hover:bg-neutral-700
-            rounded-md pt-0.5 px-1
+            cursor-pointer hover:bg-neutral-700
+            rounded-md px-1
           `}
           onClick={onClose}
-        >✕</button>
+        >
+          <Image
+            className="h-full aspect-square w-5 select-none pointer-events-none"
+            src="close.svg"
+            alt=""
+            width={5}
+            height={5}
+          />
+        </button>
       </div>
       <div className="w-full h-px bg-neutral-700 my-2" />
       <div>
