@@ -140,7 +140,8 @@ export default function Editor() {
           )}
           <ReactFlow
             colorMode="dark"
-            maxZoom={5}
+            minZoom={0.01}
+            maxZoom={30}
             nodeTypes={nodeTypes}
             nodes={nodes}
             edges={edges}
