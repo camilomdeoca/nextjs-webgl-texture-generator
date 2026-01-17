@@ -43,129 +43,153 @@ vec2 hash22(vec2 p)
 }
 
 //
-// Description : Array and textureless GLSL 2D/3D/4D simplex 
-//               noise functions.
-//      Author : Ian McEwan, Ashima Arts.
-//  Maintainer : stegu
-//     Lastmod : 20110822 (ijm)
-//     License : Copyright (C) 2011 Ashima Arts. All rights reserved.
-//               Distributed under the MIT License. See LICENSE file.
-//               https://github.com/ashima/webgl-noise
-//               https://github.com/stegu/webgl-noise
-// 
+// psrdnoise2.glsl
+//
+// Authors: Stefan Gustavson (stefan.gustavson@gmail.com)
+// and Ian McEwan (ijm567@gmail.com)
+// Version 2021-12-02, published under the MIT license (see below)
+//
+// Copyright (c) 2021 Stefan Gustavson and Ian McEwan.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+//
 
-vec4 mod289(vec4 x) {
-    return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
+//
+// Periodic (tiling) 2-D simplex noise (hexagonal lattice gradient noise)
+// with rotating gradients and analytic derivatives.
+//
+// This is (yet) another variation on simplex noise. Unlike previous
+// implementations, the grid is axis-aligned and slightly stretched in
+// the y direction to permit rectangular tiling.
+// The noise pattern can be made to tile seamlessly to any integer period
+// in x and any even integer period in y. Odd periods may be specified
+// for y, but then the actual tiling period will be twice that number.
+//
+// The rotating gradients give the appearance of a swirling motion, and
+// can serve a similar purpose for animation as motion along z in 3-D
+// noise. The rotating gradients in conjunction with the analytic
+// derivatives allow for "flow noise" effects as presented by Ken
+// Perlin and Fabrice Neyret.
+//
 
-float mod289(float x) {
-    return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
 
-vec4 permute(vec4 x) {
-    return mod289(((x*34.0)+10.0)*x);
-}
+//
+// 2-D tiling simplex noise with rotating gradients and analytical derivative.
+// "vec2 x" is the point (x,y) to evaluate,
+// "vec2 period" is the desired periods along x and y, and
+// "float alpha" is the rotation (in radians) for the swirling gradients.
+// The "float" return value is the noise value, and
+// the "out vec2 gradient" argument returns the x,y partial derivatives.
+//
+// Setting either period to 0.0 or a negative value will skip the wrapping
+// along that dimension. Setting both periods to 0.0 makes the function
+// execute about 15% faster.
+//
+// Not using the return value for the gradient will make the compiler
+// eliminate the code for computing it. This speeds up the function
+// by 10-15%.
+//
+// The rotation by alpha uses one single addition. Unlike the 3-D version
+// of psrdnoise(), setting alpha == 0.0 gives no speedup.
+//
+float psrdnoise(vec2 x, vec2 period, float alpha, out vec2 gradient) {
 
-float permute(float x) {
-    return mod289(((x*34.0)+10.0)*x);
-}
+	// Transform to simplex space (axis-aligned hexagonal grid)
+	vec2 uv = vec2(x.x + x.y*0.5, x.y);
 
-vec4 taylorInvSqrt(vec4 r) {
-    return 1.79284291400159 - 0.85373472095314 * r;
-}
+	// Determine which simplex we're in, with i0 being the "base"
+	vec2 i0 = floor(uv);
+	vec2 f0 = fract(uv);
+	// o1 is the offset in simplex space to the second corner
+	float cmp = step(f0.y, f0.x);
+	vec2 o1 = vec2(cmp, 1.0-cmp);
 
-float taylorInvSqrt(float r) {
-    return 1.79284291400159 - 0.85373472095314 * r;
-}
+	// Enumerate the remaining simplex corners
+	vec2 i1 = i0 + o1;
+	vec2 i2 = i0 + vec2(1.0, 1.0);
 
-vec4 grad4(float j, vec4 ip) {
-    const vec4 ones = vec4(1.0, 1.0, 1.0, -1.0);
-    vec4 p,s;
+	// Transform corners back to texture space
+	vec2 v0 = vec2(i0.x - i0.y * 0.5, i0.y);
+	vec2 v1 = vec2(v0.x + o1.x - o1.y * 0.5, v0.y + o1.y);
+	vec2 v2 = vec2(v0.x + 0.5, v0.y + 1.0);
 
-    p.xyz = floor( fract (vec3(j) * ip.xyz) * 7.0) * ip.z - 1.0;
-    p.w = 1.5 - dot(abs(p.xyz), ones.xyz);
-    s = vec4(lessThan(p, vec4(0.0)));
-    p.xyz = p.xyz + (s.xyz*2.0 - 1.0) * s.www; 
+	// Compute vectors from v to each of the simplex corners
+	vec2 x0 = x - v0;
+	vec2 x1 = x - v1;
+	vec2 x2 = x - v2;
 
-    return p;
-}
+	vec3 iu, iv;
+	vec3 xw, yw;
 
-float snoise(vec4 v) {
-    // (sqrt(5) - 1)/4 = F4, used once below
-    const float F4 = 0.309016994374947451;
-    const vec4  C = vec4( 0.138196601125011,  // (5 - sqrt(5))/20  G4
-                          0.276393202250021,  // 2 * G4
-                          0.414589803375032,  // 3 * G4
-                         -0.447213595499958); // -1 + 4 * G4
+	// Wrap to periods, if desired
+	if(any(greaterThan(period, vec2(0.0)))) {
+		xw = vec3(v0.x, v1.x, v2.x);
+		yw = vec3(v0.y, v1.y, v2.y);
+		if(period.x > 0.0)
+			xw = mod(vec3(v0.x, v1.x, v2.x), period.x);
+		if(period.y > 0.0)
+			yw = mod(vec3(v0.y, v1.y, v2.y), period.y);
+		// Transform back to simplex space and fix rounding errors
+		iu = floor(xw + 0.5*yw + 0.5);
+		iv = floor(yw + 0.5);
+	} else { // Shortcut if neither x nor y periods are specified
+		iu = vec3(i0.x, i1.x, i2.x);
+		iv = vec3(i0.y, i1.y, i2.y);
+	}
 
-    // First corner
-    vec4 i  = floor(v + dot(v, vec4(F4)) );
-    vec4 x0 = v -   i + dot(i, C.xxxx);
+	// Compute one pseudo-random hash value for each corner
+	vec3 hash = mod(iu, 289.0);
+	hash = mod((hash*51.0 + 2.0)*hash + iv, 289.0);
+	hash = mod((hash*34.0 + 10.0)*hash, 289.0);
 
-    // Other corners
+	// Pick a pseudo-random angle and add the desired rotation
+	vec3 psi = hash * 0.07482 + alpha;
+	vec3 gx = cos(psi);
+	vec3 gy = sin(psi);
 
-    // Rank sorting originally contributed by Bill Licea-Kane, AMD (formerly ATI)
-    vec4 i0;
-    vec3 isX = step( x0.yzw, x0.xxx );
-    vec3 isYZ = step( x0.zww, x0.yyz );
-    //  i0.x = dot( isX, vec3( 1.0 ) );
-    i0.x = isX.x + isX.y + isX.z;
-    i0.yzw = 1.0 - isX;
-    //  i0.y += dot( isYZ.xy, vec2( 1.0 ) );
-    i0.y += isYZ.x + isYZ.y;
-    i0.zw += 1.0 - isYZ.xy;
-    i0.z += isYZ.z;
-    i0.w += 1.0 - isYZ.z;
+	// Reorganize for dot products below
+	vec2 g0 = vec2(gx.x,gy.x);
+	vec2 g1 = vec2(gx.y,gy.y);
+	vec2 g2 = vec2(gx.z,gy.z);
 
-    // i0 now contains the unique values 0,1,2,3 in each channel
-    vec4 i3 = clamp( i0, 0.0, 1.0 );
-    vec4 i2 = clamp( i0-1.0, 0.0, 1.0 );
-    vec4 i1 = clamp( i0-2.0, 0.0, 1.0 );
+	// Radial decay with distance from each simplex corner
+	vec3 w = 0.8 - vec3(dot(x0, x0), dot(x1, x1), dot(x2, x2));
+	w = max(w, 0.0);
+	vec3 w2 = w * w;
+	vec3 w4 = w2 * w2;
 
-    //  x0 = x0 - 0.0 + 0.0 * C.xxxx
-    //  x1 = x0 - i1  + 1.0 * C.xxxx
-    //  x2 = x0 - i2  + 2.0 * C.xxxx
-    //  x3 = x0 - i3  + 3.0 * C.xxxx
-    //  x4 = x0 - 1.0 + 4.0 * C.xxxx
-    vec4 x1 = x0 - i1 + C.xxxx;
-    vec4 x2 = x0 - i2 + C.yyyy;
-    vec4 x3 = x0 - i3 + C.zzzz;
-    vec4 x4 = x0 + C.wwww;
+	// The value of the linear ramp from each of the corners
+	vec3 gdotx = vec3(dot(g0, x0), dot(g1, x1), dot(g2, x2));
 
-    // Permutations
-    i = mod289(i); 
-    float j0 = permute( permute( permute( permute(i.w) + i.z) + i.y) + i.x);
-    vec4 j1 = permute( permute( permute( permute (
-               i.w + vec4(i1.w, i2.w, i3.w, 1.0 ))
-             + i.z + vec4(i1.z, i2.z, i3.z, 1.0 ))
-             + i.y + vec4(i1.y, i2.y, i3.y, 1.0 ))
-             + i.x + vec4(i1.x, i2.x, i3.x, 1.0 ));
+	// Multiply by the radial decay and sum up the noise value
+	float n = dot(w4, gdotx);
 
-    // Gradients: 7x7x6 points over a cube, mapped onto a 4-cross polytope
-    // 7*7*6 = 294, which is close to the ring size 17*17 = 289.
-    vec4 ip = vec4(1.0/294.0, 1.0/49.0, 1.0/7.0, 0.0) ;
+	// Compute the first order partial derivatives
+	vec3 w3 = w2 * w;
+	vec3 dw = -8.0 * w3 * gdotx;
+	vec2 dn0 = w4.x * g0 + dw.x * x0;
+	vec2 dn1 = w4.y * g1 + dw.y * x1;
+	vec2 dn2 = w4.z * g2 + dw.z * x2;
+	gradient = 10.9 * (dn0 + dn1 + dn2);
 
-    vec4 p0 = grad4(j0,   ip);
-    vec4 p1 = grad4(j1.x, ip);
-    vec4 p2 = grad4(j1.y, ip);
-    vec4 p3 = grad4(j1.z, ip);
-    vec4 p4 = grad4(j1.w, ip);
-
-    // Normalise gradients
-    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-    p0 *= norm.x;
-    p1 *= norm.y;
-    p2 *= norm.z;
-    p3 *= norm.w;
-    p4 *= taylorInvSqrt(dot(p4,p4));
-
-    // Mix contributions from the five corners
-    vec3 m0 = max(0.57 - vec3(dot(x0,x0), dot(x1,x1), dot(x2,x2)), 0.0);
-    vec2 m1 = max(0.57 - vec2(dot(x3,x3), dot(x4,x4)            ), 0.0);
-    m0 = m0 * m0;
-    m1 = m1 * m1;
-    return 60.1 * ( dot(m0*m0, vec3( dot( p0, x0 ), dot( p1, x1 ), dot( p2, x2 )))
-                 + dot(m1*m1, vec2( dot( p3, x3 ), dot( p4, x4 ) ) ) ) ;
+	// Scale the return value to fit nicely into the range [-1,1]
+	return 10.9 * n;
 }
 
 // The MIT License

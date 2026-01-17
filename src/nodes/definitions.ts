@@ -144,21 +144,10 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         else
           weight *= (1.0 - $octave_weight_relation) / (1.0 - pow($octave_weight_relation, float($octaves)));
 
-        vec4 torusPoint;
         vec2 scale = vec2($scale_x, $scale_y) * pow(2.0, float(octave_idx));
 
-        vec2 x_offset = vec2(-1.0, 1.0);
-        vec2 y_offset = vec2(-1.0, 1.0);
-
-        float dx = (x_offset.x - x_offset.y) * scale.x;
-        float dy = (y_offset.x - y_offset.y) * scale.y;
-
-        torusPoint.x = x_offset.x - cos(TAU * $UV.s) * dx / TAU;
-	      torusPoint.y = y_offset.x - cos(TAU * $UV.t) * dy / TAU;
-	      torusPoint.z = x_offset.x - sin(TAU * $UV.s) * dx / TAU;
-	      torusPoint.w = y_offset.x - sin(TAU * $UV.t) * dy / TAU;
-        torusPoint.w += $seed;
-        value += snoise(torusPoint) * weight;
+        vec2 dummy;
+        value += psrdnoise($UV * scale, scale, 0.0, dummy) * weight;
       }
       $OUT = vec4(vec3(value * 0.5 + 0.5), 1.0);
       $OUT = clamp($OUT, 0.0, 1.0);
@@ -181,10 +170,10 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         uniformType: { type: "float", array: false },
         settings: {
           min: 1,
-          max: 100,
+          max: 20,
           step: 1,
         },
-        value: 10.0,
+        value: 4.0,
       },
       {
         name: "Scale Y",
@@ -192,11 +181,11 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         inputType: "slider",
         uniformType: { type: "float", array: false },
         settings: {
-          min: 1,
-          max: 100,
-          step: 1,
+          min: 2,
+          max: 20,
+          step: 2,
         },
-        value: 10.0,
+        value: 4.0,
       },
       {
         name: "Octave weight relation",
@@ -217,10 +206,10 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         uniformType: { type: "uint", array: false },
         settings: {
           min: 1,
-          max: 8,
+          max: 16,
           step: 1,
         },
-        value: 1.0,
+        value: 8,
       },
     ],
     inputs: [],

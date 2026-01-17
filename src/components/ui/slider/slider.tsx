@@ -63,7 +63,7 @@ export default function Slider({
 
   const fractionDigits = (step === undefined || step <= 0)
       ? undefined
-      : Math.floor(-Math.log10(step));
+      : -Math.floor(Math.log10(step));
 
   const formatOptions: Intl.NumberFormatOptions = {
     useGrouping: false,
