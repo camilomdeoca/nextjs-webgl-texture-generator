@@ -16,6 +16,8 @@ import { BaseNode } from "@/components/nodes/base-node";
 import { loadSerializableStateFromFile, useStore } from "@/nodes/store";
 import { UnmountOnConditionDelayed } from "@/components/ui/unmount-on-condition-delayed";
 import { Overlay } from "@/components/ui/overlay";
+import Image from "next/image";
+import Toolbar from "@/components/toolbar";
 
 type DroppableProperties = {
   id: string;
@@ -98,12 +100,13 @@ export default function Editor() {
   const dndId = useId();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(true);
 
   return (
     <div className="w-full h-full flex flex-col text-neutral-100 bg-red-950">
       <DndContext id={dndId} onDragEnd={handleAddNodeDragEnd}>
       <Menubar
-        className="shadow-md shadow-black z-20"
+        className="shadow-sm shadow-black z-30"
         menus={[
           {
             label: "File",
@@ -122,13 +125,45 @@ export default function Editor() {
           },
         ]}
       />
+      <Toolbar
+        className="shadow-md shadow-black z-20"
+        tools={[
+          {
+            label: "Nodes palette",
+            imageSrc: "palette.svg",
+            callback: () => setPaletteOpen(prev => !prev),
+          },
+        ]}
+      />
       <div className="flex flex-row grow min-h-0"  >
-        <div className={`
-          w-55 overflow-y-auto overflow-x-hidden h-full bg-neutral-800 border-r border-neutral-700
-          shadow-md shadow-black z-10
-        `}>
-          <NodesPalette className="w-full min-h-full" />
-        </div>
+        <UnmountOnConditionDelayed showCondition={paletteOpen}>
+          <div className={`
+            overflow-y-auto overflow-x-hidden h-full bg-neutral-800 border-r border-neutral-700
+            shadow-md shadow-black z-10 flex flex-col w-55
+            ${paletteOpen ? "animate-fade-in-width" : "animate-fade-out-width"}
+          `}>
+            <div className={`flex flex-row m-2 mb-0`}>
+              <button
+                className="p-1 hover:bg-neutral-700 rounded-md"
+                onClick={() => setPaletteOpen(prev => !prev)}
+              >
+                <Image
+                  className={`
+                    h-6 w-6 aspect-square select-none pointer-events-none
+                  `}
+                  src="close.svg"
+                  alt=""
+                  width={5}
+                  height={5}
+                />
+              </button>
+              <span className={`m-auto text-lg justify-center`}>
+                Nodes palette
+              </span>
+            </div>
+            <NodesPalette className={`w-full grow`} />
+          </div>
+        </UnmountOnConditionDelayed>
         <Droppable
           id="droppable"
           className="relative flex-1"

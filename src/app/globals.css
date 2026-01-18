@@ -33,6 +33,16 @@
     0% { opacity: 1; }
     100% { opacity: 0; }
   }
+  
+  --animate-fade-in-width: fade-in-width var(--default-transition-duration) ease-in;
+  @keyframes fade-in-width {
+    0% { width: 0; }
+  }
+  
+  --animate-fade-out-width: fade-out-width calc(var(--default-transition-duration) + 10ms) ease-in;
+  @keyframes fade-out-width {
+    100% { width: 0; }
+  }
 }
 
 @media (prefers-color-scheme: dark) {
