@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 type SliderParams = {
   className?: string,
@@ -27,38 +27,73 @@ export default function Slider({
 
   const ref = useRef<HTMLDivElement>(null);
 
-  const [savedOnMouseMove, setSavedOnMouseMove] = useState<
-    ((this: GlobalEventHandlers, ev: MouseEvent) => unknown) | null
-  >(null);
-  const [savedOnMouseUp, setSavedOnMouseUp] = useState<
-    ((this: GlobalEventHandlers, ev: MouseEvent) => unknown) | null
-  >(null);
+  const [savedCallbacks, setSavedCallbacks] = useState<{
+    onmousemove: ((this: GlobalEventHandlers, ev: MouseEvent) => unknown) | null,
+    onmouseup: ((this: GlobalEventHandlers, ev: MouseEvent) => unknown) | null,
+    ontouchmove: ((this: GlobalEventHandlers, ev: TouchEvent) => unknown) | null | undefined,
+    ontouchend: ((this: GlobalEventHandlers, ev: TouchEvent) => unknown) | null | undefined,
+  }>({
+    onmousemove: null,
+    onmouseup: null,
+    ontouchmove: null,
+    ontouchend: null,
+  });
+
+  type MouseOrTouchEvent = MouseEvent | React.MouseEvent | TouchEvent | React.TouchEvent;
+
+  const handleStart = useCallback((ev: MouseOrTouchEvent) => {
+    const handleEnd = () => {
+      document.onmousemove = savedCallbacks.onmousemove;
+      document.onmouseup = savedCallbacks.onmouseup;
+      document.ontouchmove = savedCallbacks.ontouchmove;
+      document.ontouchend = savedCallbacks.ontouchend;
+      setSavedCallbacks({
+        onmousemove: null,
+        onmouseup: null,
+        ontouchmove: null,
+        ontouchend: null,
+      });
+    };
+
+    const handleMove = (ev: MouseOrTouchEvent) => {
+      if (!ref.current)
+        throw new Error("Handle clicked before getting slider reference.");
+
+      let pageX;
+      if ("targetTouches" in ev) {
+        pageX = ev.targetTouches.item(0)?.pageX;
+        if (pageX === undefined) return;
+      } else {
+        pageX = ev.pageX;
+      }
+
+      const rect = ref.current.getBoundingClientRect();
+      const relativeX = pageX - rect.x;
+      let sliderProgress = (relativeX / rect.width);
+      if (sliderProgress > 1.0) sliderProgress = 1.0;
+      if (sliderProgress < 0.0) sliderProgress = 0.0;
+
+      let newValue = min + sliderProgress * (max - min);
+      if (step !== undefined && step !== 0) {
+        newValue = Math.round(newValue / step) * step;
+      }
+
+      onChange?.(newValue);
+    };
+
+    setSavedCallbacks({
+      onmousemove: document.onmousemove,
+      onmouseup: document.onmouseup,
+      ontouchmove: document.ontouchmove,
+      ontouchend: document.ontouchend,
+    });
+    handleMove(ev);
+    document.onmousemove = handleMove;
+    document.onmouseup = handleEnd;
+    document.ontouchmove = handleMove;
+    document.ontouchend = handleEnd;
+  }, [max, min, onChange, savedCallbacks.onmousemove, savedCallbacks.onmouseup, savedCallbacks.ontouchend, savedCallbacks.ontouchmove, step]);
   
-  const handleMouseUp = () => {
-    document.onmousemove = savedOnMouseMove;
-    document.onmouseup = savedOnMouseUp;
-    setSavedOnMouseMove(null);
-    setSavedOnMouseUp(null);
-  };
-
-  const handleMouseMove = (ev: MouseEvent | React.MouseEvent) => {
-    if (!ref.current)
-      throw new Error("Handle clicked before getting slider reference.");
-
-    const rect = ref.current.getBoundingClientRect();
-    const relativeX = ev.pageX - rect.x;
-    let sliderProgress = (relativeX / rect.width);
-    if (sliderProgress > 1.0) sliderProgress = 1.0;
-    if (sliderProgress < 0.0) sliderProgress = 0.0;
-
-    let newValue = min + sliderProgress * (max - min);
-    if (step !== undefined && step !== 0) {
-      newValue = Math.round(newValue / step) * step;
-    }
-
-    onChange?.(newValue);
-  };
-
   const progress = ((value - min) / (max - min)) * 100;
 
   const fractionDigits = (step === undefined || step <= 0)
@@ -79,13 +114,8 @@ export default function Slider({
       <div
         ref={ref}
         className="w-full h-4 cursor-pointer group flex flex-row"
-        onMouseDown={(ev) => {
-          setSavedOnMouseMove(document.onmousemove);
-          setSavedOnMouseUp(document.onmouseup);
-          handleMouseMove(ev);
-          document.onmousemove = handleMouseMove;
-          document.onmouseup = handleMouseUp;
-        }}
+        onMouseDown={handleStart}
+        onTouchStart={handleStart}
       >
         {showRange === "sides" && <span className="pr-2">{min}</span>}
         <div className="w-full h-full relative">
