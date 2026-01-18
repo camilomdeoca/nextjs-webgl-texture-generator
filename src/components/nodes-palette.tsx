@@ -19,15 +19,11 @@ export default function NodesPalette({
     return result;
   }, []);
 
-  return (
-    <div
-      className={`
-        grid grid-cols-2 gap-2 p-2
-        bg-neutral-800 text-sm font-medium relative
-        border-r border-neutral-700 content-start
-        ${className}
-      `}
-    >
+  return <div className={className}>
+    <div className={`
+      grid grid-cols-2 gap-2 p-2 bg-neutral-800 text-sm font-medium relative
+      content-start w-full h-full
+    `}>
       {data.map(({ key, name }) => (
         <NodePaletteCard
           id={`${key}_palette_card`}
@@ -37,5 +33,5 @@ export default function NodesPalette({
         />
       ))}
     </div>
-  );
+  </div>;
 }

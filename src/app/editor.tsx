@@ -122,20 +122,23 @@ export default function Editor() {
           },
         ]}
       />
-      <div className="flex flex-row w-full h-full"  >
-        <NodesPalette className="w-50 shadow-md shadow-black z-10" />
+      <div className="flex flex-row grow min-h-0"  >
+        <div className={`
+          w-55 overflow-y-auto overflow-x-hidden h-full bg-neutral-800 border-r border-neutral-700
+          shadow-md shadow-black z-10
+        `}>
+          <NodesPalette className="w-full min-h-full" />
+        </div>
         <Droppable
           id="droppable"
           className="relative flex-1"
         >
           {showDragDestination && (
-            <div
-              className={`
-                absolute inset-0 bg-neutral-950/50 z-20 pointer-events-none text-9xl
-                flex items-center justify-center border-3 border-dashed border-amber-400/50
-              `}
-            >
-                Drop here
+            <div className={`
+              absolute inset-0 bg-neutral-950/50 z-20 pointer-events-none text-9xl
+              flex items-center justify-center border-3 border-dashed border-amber-400/50
+            `}>
+              Drop here
             </div>
           )}
           <ReactFlow
