@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { hexToRgba, rgbaToHex } from "@/utils/colors";
 import { HexColorInput } from "react-colorful";
 import { PopoverColorPicker } from "../popover-color-picker";
@@ -61,32 +61,52 @@ export default function ColorControlPointsInput({
   onChange,
 }: ColorControlPointsInputParams) {
   const [dragging, setDragging] = useState(false);
-  const [savedOnMouseMove, setSavedOnMouseMove] = useState<
-    ((this: GlobalEventHandlers, ev: MouseEvent) => unknown) | null
-  >(null);
-  const [savedOnMouseUp, setSavedOnMouseUp] = useState<
-    ((this: GlobalEventHandlers, ev: MouseEvent) => unknown) | null
-  >(null);
+  const [savedCallbacks, setSavedCallbacks] = useState<{
+    onmousemove: ((this: GlobalEventHandlers, ev: MouseEvent) => unknown) | null,
+    onmouseup: ((this: GlobalEventHandlers, ev: MouseEvent) => unknown) | null,
+    ontouchmove: ((this: GlobalEventHandlers, ev: TouchEvent) => unknown) | null | undefined,
+    ontouchend: ((this: GlobalEventHandlers, ev: TouchEvent) => unknown) | null | undefined,
+  }>({
+    onmousemove: null,
+    onmouseup: null,
+    ontouchmove: null,
+    ontouchend: null,
+  });
+
+  type MouseOrTouchEvent = MouseEvent | React.MouseEvent | TouchEvent | React.TouchEvent;
 
   const [stackingOrder, setStackingOrder] = useState(() => Array.from(values, (_, i) => i))
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const handleMouseUp = () => {
-    setDragging(false)
-    document.onmousemove = savedOnMouseMove;
-    document.onmouseup = savedOnMouseUp;
-    setSavedOnMouseMove(null);
-    setSavedOnMouseUp(null);
-    // onChange(values.toSorted((a, b) => a.lightness - b.lightness));
-  };
+  const handleEnd = useCallback(() => {
+    setDragging(false);
+    document.onmousemove = savedCallbacks.onmousemove;
+    document.onmouseup = savedCallbacks.onmouseup;
+    document.ontouchmove = savedCallbacks.ontouchmove;
+    document.ontouchend = savedCallbacks.ontouchend;
+    setSavedCallbacks({
+      onmousemove: null,
+      onmouseup: null,
+      ontouchmove: null,
+      ontouchend: null,
+    });
+  }, [savedCallbacks.onmousemove, savedCallbacks.onmouseup, savedCallbacks.ontouchend, savedCallbacks.ontouchmove]);
 
-  const makeMouseMoveHandler = (controlPointIdx: number) => (ev: MouseEvent) => {
+  const makeHandleMove = (controlPointIdx: number) => (ev: MouseOrTouchEvent) => {
     if (!canvasRef.current)
       throw new Error("Handle clicked before getting canvas reference.");
 
+    let pageY;
+    if ("targetTouches" in ev) {
+      pageY = ev.targetTouches.item(0)?.pageY;
+      if (pageY === undefined) return;
+    } else {
+      pageY = ev.pageY;
+    }
+
     const rect = canvasRef.current.getBoundingClientRect();
-    const relativeYPos = ev.pageY - rect.y;
+    const relativeYPos = pageY - rect.y;
     let newLightness = 1 - (relativeYPos / rect.height);
     if (newLightness > 1.0) newLightness = 1.0;
     if (newLightness < 0.0) newLightness = 0.0;
@@ -99,6 +119,29 @@ export default function ColorControlPointsInput({
       // .toSorted((a, b) => a.lightness - b.lightness);
 
     onChange(newValues);
+  };
+
+  const makeHandleStart = (controlPointIdx: number, inStackIdx: number) => (ev: MouseOrTouchEvent) => {
+
+    setStackingOrder(prev => {
+      const newOrder = [...prev];
+      newOrder.splice(inStackIdx, 1);
+      newOrder.push(prev[inStackIdx]);
+      return newOrder;
+    })
+
+    setSavedCallbacks({
+      onmousemove: document.onmousemove,
+      onmouseup: document.onmouseup,
+      ontouchmove: document.ontouchmove,
+      ontouchend: document.ontouchend,
+    });
+    const handleMove = makeHandleMove(controlPointIdx);
+    handleMove(ev);
+    document.onmousemove = handleMove;
+    document.onmouseup = handleEnd;
+    document.ontouchmove = handleMove;
+    document.ontouchend = handleEnd;
   };
 
   useEffect(() => {
@@ -151,19 +194,8 @@ export default function ColorControlPointsInput({
                 nodrag
                 ${dragging ? "cursor-grabbing" : "cursor-grab"}
               `}
-              onMouseDown={() => {
-                setDragging(true);
-                setStackingOrder(prev => {
-                  const newOrder = [...prev];
-                  newOrder.splice(inStackIdx, 1);
-                  newOrder.push(prev[inStackIdx]);
-                  return newOrder;
-                })
-                setSavedOnMouseMove(document.onmousemove);
-                setSavedOnMouseUp(document.onmouseup);
-                document.onmousemove = makeMouseMoveHandler(i);
-                document.onmouseup = handleMouseUp;
-              }}
+              onMouseDown={makeHandleStart(i, inStackIdx)}
+              onTouchStart={makeHandleStart(i, inStackIdx)}
             > 
               <Image
                 className="h-full aspect-square w-12 select-none pointer-events-none"
