@@ -466,5 +466,49 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
     ],
     inputs: [],
   }],
+  ["repeat_range", {
+    name: "Repeat range",
+    template: preprocessTemplate(`
+      vec2 uv = $UV;
+      vec4 inputColor;
+      $INPUT0(inputColor, uv)
+
+      vec3 t = inputColor.xyz*$repeat_count;
+      vec3 u = fract(t);
+      vec3 w = smoothstep(vec3(1.0), u, vec3(1.0 - $smoothness * 0.25));
+      inputColor.xyz = (1.0 - w)*u + w*(u - 1.0);
+      $OUT = inputColor;
+      $OUT = clamp($OUT, 0.0, 1.0);
+    `),
+    parameters: [
+      {
+        name: "Repeat count",
+        uniformName: "repeat_count",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 1,
+          max: 8,
+          step: 1,
+        },
+        value: 4,
+      },
+      {
+        name: "Smoothness",
+        uniformName: "smoothness",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        value: 0.25,
+      },
+    ],
+    inputs: [
+      { name: "In", handleId: "in" },
+    ],
+  }],
 ]);
 export { nodeDefinitions };
