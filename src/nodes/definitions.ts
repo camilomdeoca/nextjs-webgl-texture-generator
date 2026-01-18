@@ -169,7 +169,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         inputType: "slider",
         uniformType: { type: "float", array: false },
         settings: {
-          min: 1,
+          min: 2,
           max: 20,
           step: 1,
         },
