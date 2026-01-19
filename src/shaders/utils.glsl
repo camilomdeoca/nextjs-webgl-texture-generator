@@ -207,7 +207,7 @@ float psrdnoise(vec2 x, vec2 period, float alpha, out vec2 gradient) {
 // Smooth:       https://www.shadertoy.com/view/ldB3zc
 // Voronoise:    https://www.shadertoy.com/view/Xd23Dh
 
-float voronoi(vec2 x, float seed)
+float voronoi(vec2 x, vec2 period, float seed)
 {
     vec2 n = floor( x );
     vec2 f = fract( x );
@@ -217,9 +217,14 @@ float voronoi(vec2 x, float seed)
     for( int i=-2; i<=2; i++ )
     {
         vec2 g = vec2( float(i),float(j) );
+		vec2 ng = n + g;
+
+		// wrap ng in the period
+		ng = mod(mod(ng, period) + period, period);
+
         vec2 o = mix(
-            hash22( n + g + (floor(seed)    )*4371.0 ),
-            hash22( n + g + (floor(seed)+1.0)*4371.0 ),
+            hash22( ng + (floor(seed)    )*4371.0 ),
+            hash22( ng + (floor(seed)+1.0)*4371.0 ),
             fract(seed)
         );
 

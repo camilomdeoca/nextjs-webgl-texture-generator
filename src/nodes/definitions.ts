@@ -366,7 +366,8 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         else
           weight *= (1.0 - $octave_weight_relation) / (1.0 - pow($octave_weight_relation, float($octaves)));
 
-        value += voronoi($UV * vec2($scale_x, $scale_y) * pow(2.0, float(octave_idx)), $seed) * weight;
+        vec2 scale = vec2($scale_x, $scale_y) * pow(2.0, float(octave_idx));
+        value += voronoi($UV * scale, scale, $seed) * weight;
       }
       $OUT = vec4(vec3(value), 1.0);
       $OUT = clamp($OUT, 0.0, 1.0);
