@@ -27,7 +27,8 @@ export default function NodePaletteCard({
       ref={setNodeRef}
       className={className + `
         p-1.5 border border-neutral-700 rounded-md hover:shadow-center-sm shadow-neutral-400
-        transition-shadow h-fit bg-neutral-800 ${isDragging ? "cursor-grabbing" : "cursor-grab"}
+        transition-shadow h-fit bg-neutral-800 touch-none
+        ${isDragging ? "cursor-grabbing" : "cursor-grab"}
       `}
       {...listeners}
       {...attributes}
