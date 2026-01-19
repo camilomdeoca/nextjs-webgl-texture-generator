@@ -147,19 +147,19 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         vec2 scale = vec2($scale_x, $scale_y) * pow(2.0, float(octave_idx));
 
         vec2 dummy;
-        value += psrdnoise($UV * scale, scale, 0.0, dummy) * weight;
+        value += psrdnoise($UV * scale, scale, $alpha, dummy) * weight;
       }
       $OUT = vec4(vec3(value * 0.5 + 0.5), 1.0);
       $OUT = clamp($OUT, 0.0, 1.0);
     `),
     parameters: [
       {
-        name: "Seed",
-        uniformName: "seed",
+        name: "Gradient rotation",
+        uniformName: "alpha",
         inputType: "number",
         uniformType: { type: "float", array: false },
         settings: {
-          step: 0.05,
+          step: 0.01,
         },
         value: 0.0,
       },
