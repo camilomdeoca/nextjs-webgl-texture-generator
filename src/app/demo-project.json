@@ -93,8 +93,8 @@
     {
       "id": "id945fc95ea399c8",
       "position": {
-        "x": 761.8824697710429,
-        "y": 1423.607824572548
+        "x": 893.3274857697636,
+        "y": 2350.828072563524
       },
       "data": {},
       "type": "baseNode",
@@ -102,14 +102,14 @@
         "width": 192,
         "height": 470
       },
-      "selected": false,
+      "selected": true,
       "dragging": false
     },
     {
       "id": "id48739c070b4e8",
       "position": {
-        "x": 1900.062167645813,
-        "y": 2433.781793513376
+        "x": 1970.4756503236372,
+        "y": 3363.567619205161
       },
       "data": {},
       "type": "baseNode",
@@ -123,8 +123,8 @@
     {
       "id": "idd467b410971e98",
       "position": {
-        "x": 764.0683570224204,
-        "y": 1921.726900500122
+        "x": 895.5133730211411,
+        "y": 2848.9471484910982
       },
       "data": {},
       "type": "baseNode",
@@ -138,8 +138,8 @@
     {
       "id": "idd8f4b289c1a94",
       "position": {
-        "x": 1024.4091232389478,
-        "y": 1781.5718608748737
+        "x": 1155.8541392376685,
+        "y": 2708.7921088658495
       },
       "data": {},
       "type": "baseNode",
@@ -153,8 +153,8 @@
     {
       "id": "id7c2334e1606808",
       "position": {
-        "x": 537.5294096287882,
-        "y": 1772.4734385326592
+        "x": 668.9744256275089,
+        "y": 2699.6936865236353
       },
       "data": {},
       "type": "baseNode",
@@ -303,8 +303,8 @@
     {
       "id": "id87a43b6bfe975",
       "position": {
-        "x": 956.6975983745904,
-        "y": 2504.9210074835805
+        "x": 951.081283249466,
+        "y": 3408.416140637629
       },
       "data": {},
       "type": "baseNode",
@@ -318,8 +318,8 @@
     {
       "id": "idbb1a076eacd95",
       "position": {
-        "x": 678.2987207470346,
-        "y": 2455.8888974097613
+        "x": 629.6115003021181,
+        "y": 3458.485192061969
       },
       "data": {},
       "type": "baseNode",
@@ -333,8 +333,8 @@
     {
       "id": "id60f998b88f7598",
       "position": {
-        "x": 1305.0311782882889,
-        "y": 2909.3770917709194
+        "x": 1420.2675547929778,
+        "y": 3059.8996771239017
       },
       "data": {},
       "type": "baseNode",
@@ -348,14 +348,59 @@
     {
       "id": "id805958b775551",
       "position": {
-        "x": 1581.356828135902,
-        "y": 2590.473216831164
+        "x": 1725.6283772314655,
+        "y": 3468.886066387696
       },
       "data": {},
       "type": "baseNode",
       "measured": {
         "width": 192,
         "height": 328
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "id0494c37f4cc2e8",
+      "position": {
+        "x": 414.06366560411146,
+        "y": 3530.624218501897
+      },
+      "data": {},
+      "type": "baseNode",
+      "measured": {
+        "width": 192,
+        "height": 470
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "id40d03028747cc",
+      "position": {
+        "x": 1192.6152574755583,
+        "y": 3535.1279583519345
+      },
+      "data": {},
+      "type": "baseNode",
+      "measured": {
+        "width": 192,
+        "height": 372
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "idd2fe912d74809",
+      "position": {
+        "x": 1425.3765908055211,
+        "y": 3564.655342888758
+      },
+      "data": {},
+      "type": "baseNode",
+      "measured": {
+        "width": 192,
+        "height": 480
       },
       "selected": false,
       "dragging": false
@@ -500,20 +545,6 @@
       "id": "xy-edge__idbb1a076eacd95out-id87a43b6bfe975warper"
     },
     {
-      "source": "id60f998b88f7598",
-      "sourceHandle": "out",
-      "target": "id805958b775551",
-      "targetHandle": "mask",
-      "id": "xy-edge__id60f998b88f7598out-id805958b775551mask"
-    },
-    {
-      "source": "id87a43b6bfe975",
-      "sourceHandle": "out",
-      "target": "id805958b775551",
-      "targetHandle": "dark",
-      "id": "xy-edge__id87a43b6bfe975out-id805958b775551dark"
-    },
-    {
       "source": "idd8f4b289c1a94",
       "sourceHandle": "out",
       "target": "id805958b775551",
@@ -529,17 +560,52 @@
       "id": "xy-edge__id805958b775551out-id48739c070b4e8in"
     },
     {
+      "source": "id0494c37f4cc2e8",
+      "sourceHandle": "out",
+      "target": "id40d03028747cc",
+      "targetHandle": "warper",
+      "id": "xy-edge__id0494c37f4cc2e8out-id40d03028747ccwarper"
+    },
+    {
       "source": "id87a43b6bfe975",
+      "sourceHandle": "out",
+      "target": "id40d03028747cc",
+      "targetHandle": "warped",
+      "id": "xy-edge__id87a43b6bfe975out-id40d03028747ccwarped"
+    },
+    {
+      "source": "id40d03028747cc",
       "sourceHandle": "out",
       "target": "id60f998b88f7598",
       "targetHandle": "in",
-      "id": "xy-edge__id87a43b6bfe975out-id60f998b88f7598in"
+      "id": "xy-edge__id40d03028747ccout-id60f998b88f7598in"
+    },
+    {
+      "source": "id60f998b88f7598",
+      "sourceHandle": "out",
+      "target": "id805958b775551",
+      "targetHandle": "dark",
+      "id": "xy-edge__id60f998b88f7598out-id805958b775551dark"
+    },
+    {
+      "source": "id66439771a5cd48",
+      "sourceHandle": "out",
+      "target": "idd2fe912d74809",
+      "targetHandle": "in",
+      "id": "xy-edge__id66439771a5cd48out-idd2fe912d74809in"
+    },
+    {
+      "source": "idd2fe912d74809",
+      "sourceHandle": "out",
+      "target": "id805958b775551",
+      "targetHandle": "mask",
+      "id": "xy-edge__idd2fe912d74809out-id805958b775551mask"
     }
   ],
   "viewport": {
-    "x": 611.5368852496764,
-    "y": 78.9996439788938,
-    "zoom": 0.2383473904991458
+    "x": 227.7769924279279,
+    "y": -1427.272837712191,
+    "zoom": 0.5475785107684011
   },
   "values": [
     [
@@ -686,7 +752,7 @@
       [
         {
           "inputType": "number",
-          "value": 547.2
+          "value": 12
         },
         {
           "inputType": "slider",
@@ -714,10 +780,10 @@
           "value": [
             {
               "color": "#190e05",
-              "lightness": 0.3019685162025395
+              "lightness": 0.30960963690907983
             },
             {
-              "color": "#3c2817",
+              "color": "#9b724f",
               "lightness": 0.7176080503099868
             }
           ]
@@ -824,11 +890,11 @@
         },
         {
           "inputType": "slider",
-          "value": 3
+          "value": 4
         },
         {
           "inputType": "slider",
-          "value": 1
+          "value": 2
         },
         {
           "inputType": "slider",
@@ -865,7 +931,7 @@
             },
             {
               "color": "#ffffff",
-              "lightness": 0.2853847911356294
+              "lightness": 0.17911059141123775
             }
           ]
         }
@@ -876,11 +942,11 @@
       [
         {
           "inputType": "slider",
-          "value": 0.764
+          "value": 0.544
         },
         {
           "inputType": "slider",
-          "value": 0.05
+          "value": 0.02426425222736363
         }
       ]
     ],
@@ -901,7 +967,7 @@
         },
         {
           "inputType": "slider",
-          "value": 0.669
+          "value": 0.457
         },
         {
           "inputType": "slider",
@@ -916,11 +982,11 @@
           "inputType": "colorcontrolpointarray",
           "value": [
             {
-              "color": "#ffffff",
+              "color": "#909090",
               "lightness": 0
             },
             {
-              "color": "#8a8a8a",
+              "color": "#656565",
               "lightness": 0.3520877080057825
             }
           ]
@@ -930,6 +996,62 @@
     [
       "id805958b775551",
       []
+    ],
+    [
+      "id0494c37f4cc2e8",
+      [
+        {
+          "inputType": "number",
+          "value": 1.95
+        },
+        {
+          "inputType": "slider",
+          "value": 4
+        },
+        {
+          "inputType": "slider",
+          "value": 4
+        },
+        {
+          "inputType": "slider",
+          "value": 0.001
+        },
+        {
+          "inputType": "slider",
+          "value": 8
+        }
+      ]
+    ],
+    [
+      "id40d03028747cc",
+      [
+        {
+          "inputType": "slider",
+          "value": 0.28700000000000003
+        },
+        {
+          "inputType": "slider",
+          "value": 0.0001
+        }
+      ]
+    ],
+    [
+      "idd2fe912d74809",
+      [
+        {
+          "inputType": "colorcontrolpointarray",
+          "value": [
+            {
+              "color": "#000000",
+              "lightness": 0.08303729000022919
+            },
+            {
+              "color": "#ffffff",
+              "lightness": 0.21446677820815474
+            }
+          ]
+        }
+      ]
     ]
   ],
   "types": [
@@ -1028,6 +1150,18 @@
     [
       "id805958b775551",
       "mix"
+    ],
+    [
+      "id0494c37f4cc2e8",
+      "simplex"
+    ],
+    [
+      "id40d03028747cc",
+      "warp"
+    ],
+    [
+      "idd2fe912d74809",
+      "colorize"
     ]
   ]
 }
