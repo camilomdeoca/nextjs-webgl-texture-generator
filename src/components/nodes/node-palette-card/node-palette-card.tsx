@@ -1,4 +1,4 @@
-import { useDraggable } from "@dnd-kit/core";
+import { DragOverlay, useDraggable } from "@dnd-kit/core";
 import {CSS} from '@dnd-kit/utilities';
 import Image from "next/image";
 
@@ -15,23 +15,20 @@ export default function NodePaletteCard({
   keyName,
   name,
 }: NodeCardParameters) {
-  const {attributes, listeners, setNodeRef, transform, isDragging} = useDraggable({
+  const {attributes, listeners, setNodeRef, isDragging} = useDraggable({
     id,
     data: {
       nodeTypeKey: keyName,
     },
   });
 
-  const style = { transform: CSS.Translate.toString(transform) };
-
-  return (
+  const card = (
     <div
       ref={setNodeRef}
       className={className + `
         p-1.5 border border-neutral-700 rounded-md hover:shadow-center-sm shadow-neutral-400
         transition-shadow h-fit bg-neutral-800 ${isDragging ? "cursor-grabbing" : "cursor-grab"}
       `}
-      style={style}
       {...listeners}
       {...attributes}
     >
@@ -47,4 +44,11 @@ export default function NodePaletteCard({
       </div>
     </div>
   );
+
+  return <>
+    {isDragging ? <div /> : card}
+    {isDragging && <DragOverlay>
+      {card}
+    </DragOverlay>}
+  </>;
 }
