@@ -65,6 +65,7 @@ type Actions = {
   loadSerializableState: (serializableState: SerializableState) => void,
   save: () => void;
   load: () => void;
+  loadDemo: () => void;
   export: () => void;
   import: () => void;
   handleAddNodeDragEnd: (event: DragEndEvent) => void;
@@ -407,9 +408,14 @@ export const useStore = create<State & Actions>((set, get) => ({
       if (serializableState) {
         get().loadSerializableState(serializableState);
       } else {
-        if (!isSerializableState(demoProject)) return;
-        get().loadSerializableState(demoProject);
+        get().loadDemo();
       }
+    })();
+  },
+  loadDemo: () => {
+    (async () => {
+      if (!isSerializableState(demoProject)) return;
+      get().loadSerializableState(demoProject);
     })();
   },
   export: () => {

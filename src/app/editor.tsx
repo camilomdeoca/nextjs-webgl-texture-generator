@@ -56,6 +56,7 @@ export default function Editor() {
     loadSerializableState,
     save,
     load,
+    loadDemo,
     onExport,
     onImport,
     handleAddNodeDragEnd,
@@ -72,6 +73,7 @@ export default function Editor() {
       loadSerializableState: state.loadSerializableState,
       save: state.save,
       load: state.load,
+      loadDemo: state.loadDemo,
       onExport: state.export,
       onImport: state.import,
       handleAddNodeDragEnd: state.handleAddNodeDragEnd,
@@ -111,16 +113,18 @@ export default function Editor() {
           {
             label: "File",
             options: [
-              { label: "Save", callback: save },
-              { label: "Load", callback: load },
-              { label: "Export", callback: onExport },
-              { label: "Import", callback: onImport },
+              { iconSrc: "save.svg",        label: "Save", callback: save },
+              { iconSrc: "folder_open.svg", label: "Load", callback: load },
+              { iconSrc: "file_save.svg",   label: "Save to file", callback: onExport },
+              { iconSrc: "upload_file.svg", label: "Import", callback: onImport },
+              {                             label: "Load demo", callback: loadDemo },
+              { iconSrc: "delete.svg",      label: "Clear storage", callback: () => localStorage.clear() },
             ],
           },
           {
             label: "Edit",
             options: [
-              { label: "Settings", callback: () => setSettingsOpen(true) },
+              { iconSrc: "settings.svg", label: "Settings", callback: () => setSettingsOpen(true) },
             ],
           },
         ]}
