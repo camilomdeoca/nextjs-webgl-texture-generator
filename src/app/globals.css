@@ -61,3 +61,24 @@
     @apply outline outline-neutral-400;
   }
 }
+
+@layer utilities {
+  .range-reset {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .range-reset::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .range-reset::-moz-range-thumb {
+    border: none;
+    background: none;
+  }
+
+  .range-reset::-ms-thumb {
+    border: none;
+  }
+}

@@ -141,8 +141,7 @@ export default function Slider({
               absolute w-3.5 h-3.5 top-1/2 -translate-1/2 bg-neutral-600
               border border-neutral-700 rounded-full
               focus:border-neutral-400 transition-colors
-              appearance-none
-              [&::-webkit-slider-thumb]:appearance-none
+              range-reset
               cursor-pointer
               group-active:bg-neutral-400
               group-hover:bg-neutral-500
