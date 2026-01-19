@@ -140,6 +140,7 @@ export default function Editor() {
           <div className={`
             overflow-y-auto overflow-x-hidden h-full bg-neutral-800 border-r border-neutral-700
             shadow-md shadow-black z-10 flex flex-col w-55
+            scrollbar scrollbar-track-neutral-800 scrollbar-thumb-neutral-700
             ${paletteOpen ? "animate-fade-in-width" : "animate-fade-out-width"}
           `}>
             <div className={`flex flex-row m-2 mb-0`}>
