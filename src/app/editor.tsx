@@ -18,6 +18,7 @@ import { UnmountOnConditionDelayed } from "@/components/ui/unmount-on-condition-
 import { Overlay } from "@/components/ui/overlay";
 import Image from "next/image";
 import Toolbar from "@/components/toolbar";
+import { ModelPreview } from "@/components/model-preview";
 
 type DroppableProperties = {
   id: string;
@@ -103,6 +104,7 @@ export default function Editor() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(true);
+  const [modelPreviewOpen, setModelPreviewOpen] = useState(true);
 
   return (
     <div className="w-full h-full flex flex-col text-neutral-100 bg-red-950">
@@ -150,7 +152,7 @@ export default function Editor() {
             <div className={`flex flex-row m-2 mb-0`}>
               <button
                 className="p-1 hover:bg-neutral-700 rounded-md"
-                onClick={() => setPaletteOpen(prev => !prev)}
+                onClick={() => setPaletteOpen(false)}
               >
                 <Image
                   className={`
@@ -222,6 +224,32 @@ export default function Editor() {
             <Controls />
           </ReactFlow>
         </Droppable>
+        <UnmountOnConditionDelayed showCondition={modelPreviewOpen}>
+          <div className={`
+            h-full bg-neutral-800 border-r border-neutral-700
+            shadow-md shadow-black z-10 flex flex-col w-96
+            ${modelPreviewOpen ? "animate-fade-in-width" : "animate-fade-out-width"}
+          `}>
+            <div className={`flex flex-row m-2 mb-0`}>
+              <button
+                className="p-1 hover:bg-neutral-700 rounded-md"
+                onClick={() => setModelPreviewOpen(false)}
+              >
+                <Image
+                  className="h-6 w-6 aspect-square select-none pointer-events-none"
+                  src="close.svg"
+                  alt=""
+                  width={5}
+                  height={5}
+                />
+              </button>
+              <span className="m-auto text-lg justify-center">
+                On model preview
+              </span>
+            </div>
+            <ModelPreview className={`w-full grow min-h-0`} />
+          </div>
+        </UnmountOnConditionDelayed>
       </div>
       <UnmountOnConditionDelayed showCondition={settingsOpen}>
         <Overlay>
