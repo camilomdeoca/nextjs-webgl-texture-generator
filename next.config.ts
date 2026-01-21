@@ -8,10 +8,16 @@ const nextConfig: NextConfig = {
   },
   /* config options here */
   webpack: (config) => {
-    config.module.rules.push({
-      test: /\.(glsl|vs|fs|vert|frag)$/,
-      use: ['raw-loader'],
-    })
+    config.module.rules.push(
+      {
+        test: /\.(glsl|vs|fs|vert|frag)$/,
+        use: ['raw-loader'],
+      },
+      {
+        test: /\.(gltf|glb)$/,
+        type: "asset/resource",
+      },
+    )
     return config;
   },
   turbopack: {
@@ -19,6 +25,9 @@ const nextConfig: NextConfig = {
       '*.{glsl,vs,fs,vert,frag}': {
         loaders: ['raw-loader'],
         as: '*.js',
+      },
+      "*.{gltf|glb}": {
+        loaders: ["file"],
       },
     },
   },

@@ -1,122 +1,118 @@
-import { createProgram } from "@/utils/webgl2";
-import { useCallback, useEffect, useRef, useState } from "react";
+"use client";
 
-const vsSource = `#version 300 es
-precision highp float;
+import { buildFinalTemplate } from "@/glsl-parsing/glsl-templates";
+import { nodeDefinitions } from "@/nodes/definitions";
+import { Canvas, ThreeElements } from "@react-three/fiber"
+import { OrbitControls } from "@react-three/drei";
+import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { ShaderChunk, Vector4 } from "three";
+import glslUtils from "@/shaders/utils.glsl";
+import { hexToRgba } from '@/utils/colors';
+import { useRef } from "react";
+import Button from "./ui/button/button";
 
-layout(location = 0) in vec3 aPosition;
-layout(location = 1) in vec3 aNormal;
+function Sphere(props: ThreeElements["mesh"]) {
+  // Return the view, these are regular Threejs elements expressed in JSX
+  return (
+    <mesh
+      {...props}
+    >
+      <icosahedronGeometry args={[2, 2]} />
+      <meshStandardMaterial
+        onBeforeCompile={(shader) => {
+          console.log("VERTEXSHADER");
+          console.log(shader.vertexShader);
+          console.log("FRAGMENTSHADER");
+          console.log(shader.fragmentShader);
+          console.log(ShaderChunk)
+          
+          const type = "simplex";
+          const definition = nodeDefinitions.get(type);
+          if (!definition) throw new Error(`Invalid node type: ${type}.`);
+          const finalTemplate = buildFinalTemplate(
+            "",
+            definition.template,
+            definition.parameters.map(p => p.uniformName),
+            [],
+          );
 
-uniform mat4 uProjection;
-uniform mat4 uView;
-uniform mat4 uModel;
+          const parameters = definition.parameters;
 
-out vec3 vNormal;
+          const uniqueParameters = new Set();
+          const uniformsSrc = parameters.map(({ uniformName, uniformType }) => {
+            const id = "";
+            const uniqueKey = `${id}|${uniformName}`;
+            if (uniqueParameters.has(uniqueKey)) return;
+            uniqueParameters.add(uniqueKey);
+            const arrayString = uniformType.array ? `[${uniformType.length}]` : "";
+            const dynamicArrayLengthString = uniformType.array && uniformType.dynamic
+              ? `\nuniform int ${id}_${uniformName}_count;`
+              : "";
+            return `uniform ${uniformType.type} ${id}_${uniformName}${arrayString};${dynamicArrayLengthString}`;
+          }).join("\n")
+          
+          shader.fragmentShader = shader.fragmentShader.replace(
+            "#include <common>",
+            `
+            ${glslUtils}
 
-void main() {
-  mat4 mvp = uProjection * uView * uModel;
-  vNormal = mat3(uModel) * aNormal;
-  gl_Position = mvp * vec4(aPosition, 1.0);
-}
-`;
+            ${uniformsSrc}
 
-const fsSource = `#version 300 es
-precision highp float;
+            void sampleProceduralDiffuse(out vec4 fragColor, in vec2 fragCoord) {
+                ${finalTemplate
+                  .replaceAll("$UV", "fragCoord")
+                  .replaceAll("$OUT", "fragColor")}
+            }\n` + "#include <common>"
+          );
 
-in vec3 vNormal;
-out vec4 outColor;
+          if (!shader.defines) throw new Error("shader's defines object is undefined.");
+          shader.defines["USE_UV"] = "";
+          shader.fragmentShader = shader.fragmentShader.replace(
+            "#include <map_fragment>",
+            `{
+                vec4 sampledDiffuseColor;
+                sampleProceduralDiffuse(sampledDiffuseColor, vUv);
+                diffuseColor.rgb *= sampledDiffuseColor.rgb;
+            }`
+          );
 
-void main() {
-  vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
-  float diffuse = max(dot(normalize(vNormal), lightDir), 0.0);
-  vec3 color = vec3(0.2, 0.6, 1.0) * diffuse + 0.1;
-  outColor = vec4(color, 1.0);
-}
-`;
+          parameters.forEach((param) => {
+            switch (param.inputType) {
+              case "number":
+              case "slider":
+              {
+                shader.uniforms[`_${param.uniformName}`] = { value: param.value };
+                break;
+              }
+              case "color":
+              {
+                shader.uniforms[`_${param.uniformName}`] = {
+                  value: new Vector4(...(hexToRgba(param.value) ?? [0, 0, 0, 1])),
+                };
+                break;
+              }
+              case "colorcontrolpointarray":
+              {
+                if (param.value.length > param.uniformType.length)
+                  throw new Error(`Too many control points. (max is ${param.uniformType.length})`);
 
-function createSphere(radius = 1, latBands = 32, lonBands = 32) {
-  const positions = [];
-  const normals = [];
-  const indices = [];
+                shader.uniforms[`_${param.uniformName}_count`] = { value: param.value.length };
 
-  for (let lat = 0; lat <= latBands; lat++) {
-    const theta = (lat * Math.PI) / latBands;
-    const sinT = Math.sin(theta);
-    const cosT = Math.cos(theta);
-
-    for (let lon = 0; lon <= lonBands; lon++) {
-      const phi = (lon * 2 * Math.PI) / lonBands;
-      const sinP = Math.sin(phi);
-      const cosP = Math.cos(phi);
-
-      const x = cosP * sinT;
-      const y = cosT;
-      const z = sinP * sinT;
-
-      normals.push(x, y, z);
-      positions.push(radius * x, radius * y, radius * z);
-    }
-  }
-
-  for (let lat = 0; lat < latBands; lat++) {
-    for (let lon = 0; lon < lonBands; lon++) {
-      const first = lat * (lonBands + 1) + lon;
-      const second = first + lonBands + 1;
-
-      indices.push(first, second, first + 1);
-      indices.push(second, second + 1, first + 1);
-    }
-  }
-
-  return {
-    positions: new Float32Array(positions),
-    normals: new Float32Array(normals),
-    indices: new Uint16Array(indices),
-  };
-}
-
-const sphereModel = createSphere();
-
-function createSphereVAO(gl: WebGL2RenderingContext) {
-  const vao = gl.createVertexArray();
-  gl.bindVertexArray(vao);
-
-  const posBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, sphereModel.positions, gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
-  
-  const normBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, normBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, sphereModel.normals, gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(1);
-  gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
-  
-  const indexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, sphereModel.indices, gl.STATIC_DRAW);
-  
-  return vao;
-}
-
-function perspective(fovy: number, aspect: number, near: number, far: number) {
-  const f = 1 / Math.tan(fovy / 2);
-  return new Float32Array([
-    f / aspect, 0, 0, 0,
-    0, f, 0, 0,
-    0, 0, (far + near) / (near - far), -1,
-    0, 0, (2 * far * near) / (near - far), 0,
-  ]);
-}
-
-function identity() {
-  return new Float32Array([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1,
-  ]);
+                shader.uniforms[`_${param.uniformName}`] = {
+                  value: param.value.map(({ color, lightness }) => ({
+                    color: new Vector4(...(hexToRgba(color) ?? [0, 0, 0, 1])),
+                    lightness: lightness,
+                  })),
+                };
+                break;
+              }
+            }
+          });
+          console.log(shader.fragmentShader);
+        }}
+      />
+    </mesh>
+  )
 }
 
 type ModelPreviewParams = {
@@ -126,87 +122,25 @@ type ModelPreviewParams = {
 export function ModelPreview({
   className,
 }: ModelPreviewParams) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [renderCtx, setRenderCtx] = useState<{
-    program: WebGLProgram,
-    vao: WebGLVertexArrayObject,
-  } | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) throw new Error("Error trying to resize before getting canvas reference.");
-    const gl = canvas.getContext("webgl2");
-    if (!gl) throw new Error("Error getting WebGL2 context.");
-
-    const program = createProgram(gl, vsSource, fsSource);
-    const vao = createSphereVAO(gl);
-    setRenderCtx({ program, vao });
-  }, [canvasRef]);
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) throw new Error("Error trying to resize before getting canvas reference.");
-    const gl = canvas.getContext("webgl2");
-    if (!gl) throw new Error("Error getting WebGL2 context.");
-    if (!renderCtx) return;//throw new Error("Render context is null.");
-
-    gl.enable(gl.DEPTH_TEST);
-    gl.useProgram(renderCtx.program);
-    
-    const uProjection = gl.getUniformLocation(renderCtx.program, "uProjection");
-    const uView = gl.getUniformLocation(renderCtx.program, "uView");
-    const uModel = gl.getUniformLocation(renderCtx.program, "uModel");
-
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(0.05, 0.05, 0.1, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    const projection = perspective(
-      Math.PI / 4,
-      canvas.width / canvas.height,
-      0.1,
-      100
-    );
-    
-    const view = identity();
-    
-    const model = identity();
-    model[14] = -4; // translate Z
-    
-    gl.uniformMatrix4fv(uProjection, false, projection);
-    gl.uniformMatrix4fv(uView, false, view);
-    gl.uniformMatrix4fv(uModel, false, model);
-
-    gl.bindVertexArray(renderCtx.vao);
-    gl.drawElements(gl.TRIANGLES, sphereModel.indices.length, gl.UNSIGNED_SHORT, 0);
-
-    console.log("Drawn:", canvas.width, canvas.height);
-  }, [renderCtx]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) throw new Error("Error trying to resize before getting canvas reference.");
-    
-    const resize = () => {
-      const { width, height } = canvas.getBoundingClientRect();
-
-      const dpr = window.devicePixelRatio || 1;
-
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-
-      draw();
-    };
-
-    const observer = new ResizeObserver(resize);
-    observer.observe(canvas);
-
-    resize();
-
-    return () => observer.disconnect();
-  }, [draw]);
+  const controlsRef = useRef<OrbitControlsImpl>(null);
 
   return <div className={className}>
-    <canvas onClick={draw} ref={canvasRef} className="w-full h-full" />
+    <div className="w-full h-full flex flex-col">
+      <Button
+        className="mx-2 my-1"
+        onClick={() => {
+          if (!controlsRef.current) return;
+          controlsRef.current.reset();
+        }}
+      >
+        Reset view
+      </Button>
+      <Canvas className="w-full grow">
+        <ambientLight intensity={Math.PI / 4} />
+        <directionalLight position={[10, 10, 10]} />
+        <Sphere position={[0, 0, 0]} />
+        <OrbitControls ref={controlsRef} />
+      </Canvas>
+    </div>
   </div>;
 }
