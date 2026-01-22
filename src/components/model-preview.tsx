@@ -3,13 +3,15 @@
 import { Canvas, ThreeElements } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { MeshStandardMaterial, Vector4, WebGLProgramParametersWithUniforms } from "three";
+import { MeshStandardMaterial, TangentSpaceNormalMap, Texture, Vector4, WebGLProgramParametersWithUniforms } from "three";
 import glslUtils from "@/shaders/utils.glsl";
 import { hexToRgba } from '@/utils/colors';
 import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "./ui/button/button";
 import { useStore, useCustomComparison, getParametersFromNode, BaseNodeParameterDefinition } from "@/nodes/store";
 import { useShallow } from "zustand/shallow";
+import { allDefined } from "@/utils/lists";
+import { Slider } from "./ui/slider";
 
 function updateUniforms(
   shader: WebGLProgramParametersWithUniforms,
@@ -59,12 +61,32 @@ function updateUniforms(
   });
 }
 
-function Sphere(props: ThreeElements["mesh"] & { colorNodeId: string }) {
+function Sphere(props: ThreeElements["mesh"] & {
+  colorNodeId: string,
+  normalNodeId: string,
+  normalScale: number,
+}) {
   const materialRef = useRef<MeshStandardMaterial>(null);
 
-  const template = useStore(state => state.templates.get(props.colorNodeId));
+  const {
+    colorTemplate,
+    normalTemplate,
+  } = useStore(useShallow(state => ({
+    colorTemplate: state.templates.get(props.colorNodeId),
+    normalTemplate: state.templates.get(props.normalNodeId),
+  })));
+
   const parameters = useStore(useCustomComparison(
-    state => getParametersFromNode(state, props.colorNodeId),
+    state => {
+      const parameters = [
+        getParametersFromNode(state, props.colorNodeId),
+        getParametersFromNode(state, props.normalNodeId),
+      ];
+
+      if (!allDefined(parameters)) return undefined;
+
+      return parameters.flat();
+    },
     (a, b) => {
       if (a === b) return true;
       if (a === undefined || b === undefined) return false;
@@ -79,7 +101,7 @@ function Sphere(props: ThreeElements["mesh"] & { colorNodeId: string }) {
 
   const modifyShader = useCallback((shader: WebGLProgramParametersWithUniforms) => {
     if (process.env.NODE_ENV === "development") console.log("COMPILE SHADER MODEL PREVIEW");
-    if (template === undefined) return;
+    if (colorTemplate === undefined || normalTemplate === undefined) return;
     if (parameters === undefined) return;
 
     const uniqueParameters = new Set();
@@ -102,10 +124,19 @@ function Sphere(props: ThreeElements["mesh"] & { colorNodeId: string }) {
       ${uniformsSrc}
 
       void sampleProceduralDiffuse(out vec4 fragColor, in vec2 fragCoord) {
-          ${template
+          ${colorTemplate
             .replaceAll("$UV", "fragCoord")
             .replaceAll("$OUT", "fragColor")}
-      }\n` + "#include <common>"
+      }
+      
+      void sampleProceduralNormal(out vec4 fragColor, in vec2 fragCoord) {
+          ${normalTemplate
+            .replaceAll("$UV", "fragCoord")
+            .replaceAll("$OUT", "fragColor")}
+      }
+
+      #include <common>
+      `
     );
 
     if (!shader.defines) throw new Error("shader's defines object is undefined.");
@@ -118,12 +149,25 @@ function Sphere(props: ThreeElements["mesh"] & { colorNodeId: string }) {
           diffuseColor.rgb *= sampledDiffuseColor.rgb;
       }`
     );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <normal_fragment_maps>",
+      `{
+          vec4 sampledNormal;
+          sampleProceduralNormal(sampledNormal, vUv);
+          vec3 mapN = sampledNormal.xyz * 2.0 - 1.0;
+          mapN.xy *= normalScale;
+	        normal = normalize( tbn * mapN );
+      }`
+    );
+
+    console.log(shader.vertexShader);
+    console.log(shader.fragmentShader);
 
     if (!materialRef.current) throw new Error("materialRef is null.");
     materialRef.current.userData.shader = shader;
     updateUniforms(shader, parameters);
 
-  }, [parameters, template]);
+  }, [colorTemplate, normalTemplate, parameters]);
 
   useEffect(() => {
     if (materialRef.current) {
@@ -144,14 +188,17 @@ function Sphere(props: ThreeElements["mesh"] & { colorNodeId: string }) {
   return (
     <mesh {...props}>
       <icosahedronGeometry args={[2, 2]} />
-      {parameters && template && <meshStandardMaterial
+      {parameters && colorTemplate && normalTemplate && <meshStandardMaterial
         ref={materialRef}
         onBeforeCompile={modifyShader}
+        normalMap={new Texture()}
+        normalMapType={TangentSpaceNormalMap}
+        normalScale={props.normalScale}
         customProgramCacheKey={() => {
-          const startTime = performance.now();
-          const key = JSON.stringify({ id: props.colorNodeId, template });
-          const endTime = performance.now();
-          console.log(`COMPUTE KEY took ${endTime-startTime} ms`);
+          //const startTime = performance.now();
+          const key = JSON.stringify({ id: props.colorNodeId, colorTemplate, normalTemplate });
+          //const endTime = performance.now();
+          //console.log(`COMPUTE KEY took ${endTime-startTime} ms`);
           return key;
         }}
       />}
@@ -169,10 +216,16 @@ export function ModelPreview({
   const controlsRef = useRef<OrbitControlsImpl>(null);
  
   const [colorNodeId, setColorNodeId] = useState<string | undefined>(undefined);
+  const [normalNodeId, setNormalNodeId] = useState<string | undefined>(undefined);
 
-  const handleNodePicked = useCallback((id: string) => {
+  const [normalScale, setNormalScale] = useState(1.0);
+
+  const handleNodePickedForColor = useCallback((id: string) => {
     setColorNodeId(id);
-    console.log("PICKED", id);
+  }, []);
+  
+  const handleNodePickedForNormal = useCallback((id: string) => {
+    setNormalNodeId(id);
   }, []);
   
   const {
@@ -180,7 +233,8 @@ export function ModelPreview({
     pickingColorNode,
   } = useStore(useShallow(state => ({
     requestPickNode: state.requestPickNode,
-    pickingColorNode: state.pickNodeCallback === handleNodePicked
+    pickingColorNode: state.pickNodeCallback === handleNodePickedForColor,
+    pickingNormalNode: state.pickNodeCallback === handleNodePickedForNormal,
   })));
 
 
@@ -197,14 +251,29 @@ export function ModelPreview({
       </Button>
       <Button
         className={`mx-2 w-fit rounded-md ${pickingColorNode ? "bg-neutral-700" : ""}`}
-        onClick={() => requestPickNode(pickingColorNode ? undefined : handleNodePicked)}
+        onClick={() => requestPickNode(pickingColorNode ? undefined : handleNodePickedForColor)}
       >
         Select color node
       </Button>
+      <Button
+        className={`mx-2 w-fit rounded-md ${pickingColorNode ? "bg-neutral-700" : ""}`}
+        onClick={() => requestPickNode(pickingColorNode ? undefined : handleNodePickedForNormal)}
+      >
+        Select normal node
+      </Button>
+      <label className="mx-2 w-fit">
+        Normal scale
+        <Slider className="w-56" value={normalScale} min={0} max={1} step={0.1} onChange={setNormalScale} showValue />
+      </label>
       <Canvas className="w-full grow">
         <ambientLight intensity={Math.PI / 4} />
         <directionalLight position={[10, 10, 10]} />
-        {colorNodeId && <Sphere position={[0, 0, 0]} colorNodeId={colorNodeId} />}
+        {colorNodeId && normalNodeId && <Sphere
+          position={[0, 0, 0]}
+          colorNodeId={colorNodeId}
+          normalNodeId={normalNodeId}
+          normalScale={normalScale}
+        />}
         <OrbitControls ref={controlsRef} />
       </Canvas>
     </div>
