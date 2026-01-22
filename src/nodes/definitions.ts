@@ -511,5 +511,58 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
       { name: "In", handleId: "in" },
     ],
   }],
+  ["normal_map", {
+    name: "Normal map",
+    template: preprocessTemplate(`
+      vec4 warperSample, warperSampleX, warperSampleY;
+      
+      vec2 sampleUv = $UV;
+      $INPUT0(warperSample, sampleUv)
+      sampleUv = $UV + vec2($derivation_step, 0);
+      $INPUT0(warperSampleX, sampleUv)
+      sampleUv = $UV + vec2(0, $derivation_step);
+      $INPUT0(warperSampleY, sampleUv)
+
+      float dx = (rgb2hsv(warperSample.rgb).z - rgb2hsv(warperSampleX.rgb).z) / $derivation_step;
+      float dy = (rgb2hsv(warperSample.rgb).z - rgb2hsv(warperSampleY.rgb).z) / $derivation_step;
+
+      vec4 outputColor;
+      outputColor.xyz = normalize(vec3(-dx * $strength, -dy * $strength, 1.0));
+      outputColor.xyz = outputColor.xyz * 0.5 + 0.5;
+      outputColor.w = 1.0;
+
+      $OUT = outputColor;
+      $OUT = clamp($OUT, 0.0, 1.0);
+    `),
+    parameters: [
+      {
+        name: "Strength",
+        uniformName: "strength",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.1,
+          max: 10.0,
+          step: 0.001,
+        },
+        value: 1.0,
+      },
+      {
+        name: "Derivation step",
+        uniformName: "derivation_step",
+        inputType: "slider",
+        uniformType: { type: "float", array: false },
+        settings: {
+          min: 0.0001,
+          max: 0.05,
+          step: 0,
+        },
+        value: 0.001,
+      },
+    ],
+    inputs: [
+      { name: "Height", handleId: "height" },
+    ],
+  }],
 ]);
 export { nodeDefinitions };
