@@ -141,6 +141,11 @@ export default function Editor() {
             imageSrc: "palette.svg",
             callback: () => setPaletteOpen(prev => !prev),
           },
+          {
+            label: "Preview on a model",
+            imageSrc: "preview.svg",
+            callback: () => setModelPreviewOpen(prev => !prev),
+          },
         ]}
       />
       <div className="flex flex-row grow min-h-0"  >
@@ -230,7 +235,7 @@ export default function Editor() {
         <UnmountOnConditionDelayed showCondition={modelPreviewOpen}>
           <div className={`
             h-full bg-neutral-800 border-r border-neutral-700
-            shadow-md shadow-black z-10 flex flex-col w-96
+            shadow-md shadow-black z-10 flex flex-col w-xl
             ${modelPreviewOpen ? "animate-fade-in-width" : "animate-fade-out-width"}
           `}>
             <div className={`flex flex-row m-2 mb-0`}>
