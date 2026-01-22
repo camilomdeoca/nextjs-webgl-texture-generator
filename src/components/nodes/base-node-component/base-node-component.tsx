@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { OneConnectionHandle } from "../one-connection-handle";
 import { useStore, useCustomComparison, getParametersFromNode } from "@/nodes/store";
 import { NodePreviewCanvas } from "../node-preview-canvas";
+import { useShallow } from "zustand/shallow";
 
 export type BaseNodeComponentParameters = {
   nodeProps: NodeProps,
@@ -70,6 +71,14 @@ export default function BaseNodeComponent({
     },
   ));
 
+  const {
+    pickingNode,
+    pickNode,
+  } = useStore(useShallow(state => ({
+    pickingNode: state.pickNodeCallback !== undefined,
+    pickNode: state.pickNode,
+  })));
+
   return (
     <div
       className={`
@@ -80,6 +89,14 @@ export default function BaseNodeComponent({
         ${nodeProps.selected ? "border-neutral-400" : "border-neutral-700"}
       `}
     >
+      {pickingNode && <div
+        className={`
+          absolute w-full h-full z-10
+          border-3 border-amber-400/50 bg-neutral-950/50
+          rounded-lg cursor-crosshair
+        `}
+        onClick={() => pickNode(id)}
+      />}
       <div className="p-2.5">
         <p className="text-base">{name}</p>
       </div>

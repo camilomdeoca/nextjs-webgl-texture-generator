@@ -44,6 +44,9 @@ type State = {
   values: Map<string, ParameterValue[]>;
   templates: Map<string, string>;
   types: Map<string, string>;
+
+  // callback registered when requesting to pick a node
+  pickNodeCallback: ((id: string) => void) | undefined;
 };
 
 type Actions = {
@@ -69,6 +72,9 @@ type Actions = {
   export: () => void;
   import: () => void;
   handleAddNodeDragEnd: (event: DragEndEvent) => void;
+
+  requestPickNode: (callback: ((id: string) => void) | undefined) => void;
+  pickNode: (id: string) => void,
 };
 
 const flowKey = 'texture-generator-flow';
@@ -179,6 +185,7 @@ export const useStore = create<State & Actions>((set, get) => ({
   values: new Map(),
   templates: new Map(),
   types: new Map(),
+  pickNodeCallback: undefined,
 
   updateTemplatesFromNode: (id) => {
     const type = get().types.get(id);
@@ -493,5 +500,14 @@ export const useStore = create<State & Actions>((set, get) => ({
     } else {
       console.warn("ERROR: adding node", event);
     }
+  },
+  requestPickNode: (pickNodeCallback) => {
+    set({ pickNodeCallback });
+  },
+  pickNode: (id) => {
+    set(state => {
+      state.pickNodeCallback?.(id);
+      return { pickNodeCallback: undefined };
+    });
   },
 }));

@@ -6,9 +6,10 @@ import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { MeshStandardMaterial, Vector4, WebGLProgramParametersWithUniforms } from "three";
 import glslUtils from "@/shaders/utils.glsl";
 import { hexToRgba } from '@/utils/colors';
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "./ui/button/button";
 import { useStore, useCustomComparison, getParametersFromNode, BaseNodeParameterDefinition } from "@/nodes/store";
+import { useShallow } from "zustand/shallow";
 
 function updateUniforms(
   shader: WebGLProgramParametersWithUniforms,
@@ -58,13 +59,12 @@ function updateUniforms(
   });
 }
 
-function Sphere(props: ThreeElements["mesh"] & { nodeId: string }) {
+function Sphere(props: ThreeElements["mesh"] & { colorNodeId: string }) {
   const materialRef = useRef<MeshStandardMaterial>(null);
 
-  const id = props.nodeId;
-  const template = useStore(state => state.templates.get(id));
+  const template = useStore(state => state.templates.get(props.colorNodeId));
   const parameters = useStore(useCustomComparison(
-    state => getParametersFromNode(state, id),
+    state => getParametersFromNode(state, props.colorNodeId),
     (a, b) => {
       if (a === b) return true;
       if (a === undefined || b === undefined) return false;
@@ -149,7 +149,7 @@ function Sphere(props: ThreeElements["mesh"] & { nodeId: string }) {
         onBeforeCompile={modifyShader}
         customProgramCacheKey={() => {
           const startTime = performance.now();
-          const key = JSON.stringify({ id, template });
+          const key = JSON.stringify({ id: props.colorNodeId, template });
           const endTime = performance.now();
           console.log(`COMPUTE KEY took ${endTime-startTime} ms`);
           return key;
@@ -161,19 +161,33 @@ function Sphere(props: ThreeElements["mesh"] & { nodeId: string }) {
 
 type ModelPreviewParams = {
   className?: string,
-  nodeId?: string,
 };
 
 export function ModelPreview({
   className,
-  nodeId,
 }: ModelPreviewParams) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
+ 
+  const [colorNodeId, setColorNodeId] = useState<string | undefined>(undefined);
+
+  const handleNodePicked = useCallback((id: string) => {
+    setColorNodeId(id);
+    console.log("PICKED", id);
+  }, []);
+  
+  const {
+    requestPickNode,
+    pickingColorNode,
+  } = useStore(useShallow(state => ({
+    requestPickNode: state.requestPickNode,
+    pickingColorNode: state.pickNodeCallback === handleNodePicked
+  })));
+
 
   return <div className={className}>
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col gap-1 pt-1">
       <Button
-        className="mx-2 my-1"
+        className="mx-2 w-fit"
         onClick={() => {
           if (!controlsRef.current) return;
           controlsRef.current.reset();
@@ -181,10 +195,16 @@ export function ModelPreview({
       >
         Reset view
       </Button>
+      <Button
+        className={`mx-2 w-fit rounded-md ${pickingColorNode ? "bg-neutral-700" : ""}`}
+        onClick={() => requestPickNode(pickingColorNode ? undefined : handleNodePicked)}
+      >
+        Select color node
+      </Button>
       <Canvas className="w-full grow">
         <ambientLight intensity={Math.PI / 4} />
         <directionalLight position={[10, 10, 10]} />
-        {nodeId && <Sphere position={[0, 0, 0]} nodeId={nodeId} />}
+        {colorNodeId && <Sphere position={[0, 0, 0]} colorNodeId={colorNodeId} />}
         <OrbitControls ref={controlsRef} />
       </Canvas>
     </div>
