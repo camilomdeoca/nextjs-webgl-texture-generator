@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Button from "./ui/button/button";
 
 type ToolbarButtonParams = {
   label: string,
@@ -12,15 +13,15 @@ function ToolbarButton({
   callback
 }: ToolbarButtonParams) {
   return (
-    <button
-      className="button p-1 hover:bg-neutral-700 rounded-md"
-      onMouseDown={callback}
+    <Button
+      onClick={callback}
+      title={label}
     >
       {imageSrc !== undefined
         ? <Image className="h-6 w-6" src={imageSrc} alt={label} width={10} height={10} />
         : label
       }
-    </button>
+    </Button>
   );
 }
 
@@ -41,7 +42,7 @@ export default function Toolbar({
         border-b border-neutral-700
       `}
     >
-      <div className="mx-1">
+      <div className="mx-1 flex flex-row gap-1">
         {tools.map(({label, imageSrc, callback}, i) => (
           <ToolbarButton
             key={i}
