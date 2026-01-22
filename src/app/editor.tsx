@@ -106,6 +106,8 @@ export default function Editor() {
   const [paletteOpen, setPaletteOpen] = useState(true);
   const [modelPreviewOpen, setModelPreviewOpen] = useState(true);
 
+  const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(undefined);
+
   return (
     <div className="w-full h-full flex flex-col text-neutral-100 bg-red-950">
       <DndContext id={dndId} onDragEnd={handleAddNodeDragEnd}>
@@ -193,6 +195,7 @@ export default function Editor() {
             viewport={viewport}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onSelectionChange={({ nodes, edges }) => setSelectedNodeId(nodes.at(0)?.id)}
             onViewportChange={onViewportChange}
             onConnect={onConnect}
             onInit={onInit}
@@ -247,7 +250,7 @@ export default function Editor() {
                 On model preview
               </span>
             </div>
-            <ModelPreview className={`w-full grow min-h-0`} />
+            <ModelPreview className={`w-full grow min-h-0`} nodeId={selectedNodeId} />
           </div>
         </UnmountOnConditionDelayed>
       </div>
