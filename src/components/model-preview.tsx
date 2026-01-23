@@ -66,7 +66,7 @@ const dummyTexture = new Texture();
 
 function Sphere(props: ThreeElements["mesh"] & {
   colorNodeId: string,
-  normalNodeId: string,
+  normalNodeId?: string,
   normalScale: number,
 }) {
   const materialRef = useRef<MeshStandardMaterial>(null);
@@ -76,14 +76,14 @@ function Sphere(props: ThreeElements["mesh"] & {
     normalTemplate,
   } = useStore(useShallow(state => ({
     colorTemplate: state.templates.get(props.colorNodeId),
-    normalTemplate: state.templates.get(props.normalNodeId),
+    normalTemplate: props.normalNodeId ? state.templates.get(props.normalNodeId) : undefined,
   })));
 
   const parameters = useStore(useCustomComparison(
     state => {
       const parameters = [
         getParametersFromNode(state, props.colorNodeId),
-        getParametersFromNode(state, props.normalNodeId),
+        props.normalNodeId ? getParametersFromNode(state, props.normalNodeId) : [],
       ];
 
       if (!allDefined(parameters)) return undefined;
@@ -104,7 +104,7 @@ function Sphere(props: ThreeElements["mesh"] & {
 
   const modifyShader = useCallback((shader: WebGLProgramParametersWithUniforms) => {
     if (process.env.NODE_ENV === "development") console.log("COMPILE SHADER MODEL PREVIEW");
-    if (colorTemplate === undefined || normalTemplate === undefined) return;
+    if (colorTemplate === undefined) return;
     if (parameters === undefined) return;
 
     const uniqueParameters = new Set();
@@ -131,12 +131,14 @@ function Sphere(props: ThreeElements["mesh"] & {
             .replaceAll("$UV", "fragCoord")
             .replaceAll("$OUT", "fragColor")}
       }
-      
+     
+      ${normalTemplate !== undefined ? `
       void sampleProceduralNormal(out vec4 fragColor, in vec2 fragCoord) {
           ${normalTemplate
             .replaceAll("$UV", "fragCoord")
             .replaceAll("$OUT", "fragColor")}
       }
+      ` : ""}
 
       #include <common>
       `
@@ -152,19 +154,18 @@ function Sphere(props: ThreeElements["mesh"] & {
           diffuseColor.rgb *= sampledDiffuseColor.rgb;
       }`
     );
-    shader.fragmentShader = shader.fragmentShader.replace(
-      "#include <normal_fragment_maps>",
-      `{
-          vec4 sampledNormal;
-          sampleProceduralNormal(sampledNormal, vUv);
-          vec3 mapN = sampledNormal.xyz * 2.0 - 1.0;
-          mapN.xy *= normalScale;
-	        normal = normalize( tbn * mapN );
-      }`
-    );
-
-    console.log(shader.vertexShader);
-    console.log(shader.fragmentShader);
+    if (normalTemplate !== undefined) {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <normal_fragment_maps>",
+        `{
+            vec4 sampledNormal;
+            sampleProceduralNormal(sampledNormal, vUv);
+            vec3 mapN = sampledNormal.xyz * 2.0 - 1.0;
+            mapN.xy *= normalScale;
+	          normal = normalize( tbn * mapN );
+        }`
+      );
+    }
 
     if (!materialRef.current) throw new Error("materialRef is null.");
     materialRef.current.userData.shader = shader;
@@ -191,11 +192,11 @@ function Sphere(props: ThreeElements["mesh"] & {
   return (
     <mesh {...props}>
       <icosahedronGeometry args={[2, 6]} />
-      {parameters && colorTemplate && normalTemplate && <meshStandardMaterial
+      {parameters && colorTemplate && <meshStandardMaterial
         ref={materialRef}
         onBeforeCompile={modifyShader}
-        normalMap={dummyTexture}
-        normalMapType={TangentSpaceNormalMap}
+        normalMap={normalTemplate ? dummyTexture : undefined}
+        normalMapType={normalTemplate ? TangentSpaceNormalMap : undefined}
         normalScale={props.normalScale}
         customProgramCacheKey={() => {
           //const startTime = performance.now();
@@ -261,7 +262,7 @@ export function ModelPreview({
       <Canvas className="w-full grow">
         <ambientLight intensity={Math.PI / 4} />
         <directionalLight position={[10, 10, 10]} />
-        {colorNodeId && normalNodeId && <Sphere
+        {colorNodeId && <Sphere
           position={[0, 0, 0]}
           colorNodeId={colorNodeId}
           normalNodeId={normalNodeId}
