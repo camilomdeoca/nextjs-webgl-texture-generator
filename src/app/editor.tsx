@@ -249,7 +249,7 @@ export default function Editor() {
                 />
               </button>
               <span className="m-auto text-lg justify-center">
-                On model preview
+                Model preview
               </span>
             </div>
             <ModelPreview className={`w-full grow min-h-0`} />
