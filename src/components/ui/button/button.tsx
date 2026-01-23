@@ -15,7 +15,7 @@ export default function Button({
 }: ButtonProps) {
   return <div className={className}>
     <button
-      className="p-1 hover:bg-neutral-700 rounded-md w-full"
+      className="p-1 hover:bg-neutral-700 active:bg-neutral-400 rounded-md w-full cursor-pointer"
       title={title}
       onClick={onClick}
     >
