@@ -117,14 +117,14 @@
         "width": 192,
         "height": 480
       },
-      "selected": true,
+      "selected": false,
       "dragging": false
     },
     {
       "id": "idd467b410971e98",
       "position": {
-        "x": 895.5133730211411,
-        "y": 2848.9471484910982
+        "x": 887.7525094886784,
+        "y": 2850.05584328145
       },
       "data": {},
       "type": "baseNode",
@@ -434,6 +434,21 @@
       },
       "selected": false,
       "dragging": false
+    },
+    {
+      "id": "id7d4894d4ce729",
+      "position": {
+        "x": 1749.4729098045455,
+        "y": 3068.832122260365
+      },
+      "data": {},
+      "type": "baseNode",
+      "measured": {
+        "width": 192,
+        "height": 344
+      },
+      "selected": true,
+      "dragging": false
     }
   ],
   "edges": [
@@ -658,12 +673,19 @@
       "target": "idd2fe912d74809",
       "targetHandle": "in",
       "id": "xy-edge__id425578351ff45out-idd2fe912d74809in"
+    },
+    {
+      "source": "id805958b775551",
+      "sourceHandle": "out",
+      "target": "id7d4894d4ce729",
+      "targetHandle": "height",
+      "id": "xy-edge__id805958b775551out-id7d4894d4ce729height"
     }
   ],
   "viewport": {
-    "x": -1353.1295116938509,
-    "y": -3495.502729824282,
-    "zoom": 1.065209895191071
+    "x": -441.69345415197427,
+    "y": -2055.168661252157,
+    "zoom": 0.7637316597238072
   },
   "values": [
     [
@@ -826,7 +848,7 @@
         },
         {
           "inputType": "slider",
-          "value": 6
+          "value": 4
         }
       ]
     ],
@@ -869,7 +891,7 @@
         },
         {
           "inputType": "slider",
-          "value": 16
+          "value": 9
         }
       ]
     ],
@@ -1140,6 +1162,19 @@
           "value": 0.0001
         }
       ]
+    ],
+    [
+      "id7d4894d4ce729",
+      [
+        {
+          "inputType": "slider",
+          "value": 0.1
+        },
+        {
+          "inputType": "slider",
+          "value": 0.0009063950856229225
+        }
+      ]
     ]
   ],
   "types": [
@@ -1258,6 +1293,10 @@
     [
       "id425578351ff45",
       "warp"
+    ],
+    [
+      "id7d4894d4ce729",
+      "normal_map"
     ]
   ]
 }
