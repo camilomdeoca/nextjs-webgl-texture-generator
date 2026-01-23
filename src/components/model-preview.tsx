@@ -69,7 +69,10 @@ function Sphere(props: ThreeElements["mesh"] & {
   normalNodeId?: string,
   normalScale: number,
 }) {
-  const materialRef = useRef<MeshStandardMaterial>(null);
+  const materialRef = useRef<
+    Omit<MeshStandardMaterial, "userData">
+    & { userData: { shader?: WebGLProgramParametersWithUniforms } }
+  >(null);
 
   const {
     colorTemplate,
@@ -184,7 +187,7 @@ function Sphere(props: ThreeElements["mesh"] & {
     if (!parameters) return;
     if (!materialRef.current) throw new Error("materialRef is null.");
     if (!materialRef.current.userData.shader) return;
-    const shader = materialRef.current.userData.shader as WebGLProgramParametersWithUniforms;
+    const shader = materialRef.current.userData.shader;
     updateUniforms(shader, parameters);
   }, [parameters]);
 
