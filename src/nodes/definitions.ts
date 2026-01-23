@@ -541,8 +541,8 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         inputType: "slider",
         uniformType: { type: "float", array: false },
         settings: {
-          min: 0.1,
-          max: 10.0,
+          min: 0.001,
+          max: 0.1,
           step: 0.001,
         },
         value: 1.0,
@@ -554,7 +554,7 @@ const nodeDefinitions = new Map<string, NodeDefinition>([
         uniformType: { type: "float", array: false },
         settings: {
           min: 0.0001,
-          max: 0.05,
+          max: 0.01,
           step: 0,
         },
         value: 0.001,
