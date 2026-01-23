@@ -62,6 +62,8 @@ function updateUniforms(
   });
 }
 
+const dummyTexture = new Texture();
+
 function Sphere(props: ThreeElements["mesh"] & {
   colorNodeId: string,
   normalNodeId: string,
@@ -192,7 +194,7 @@ function Sphere(props: ThreeElements["mesh"] & {
       {parameters && colorTemplate && normalTemplate && <meshStandardMaterial
         ref={materialRef}
         onBeforeCompile={modifyShader}
-        normalMap={new Texture()}
+        normalMap={dummyTexture}
         normalMapType={TangentSpaceNormalMap}
         normalScale={props.normalScale}
         customProgramCacheKey={() => {
