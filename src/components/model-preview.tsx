@@ -12,6 +12,7 @@ import { useStore, useCustomComparison, getParametersFromNode, BaseNodeParameter
 import { useShallow } from "zustand/shallow";
 import { allDefined } from "@/utils/lists";
 import { Slider } from "./ui/slider";
+import { NodePicker } from "./ui/node-picker";
 
 function updateUniforms(
   shader: WebGLProgramParametersWithUniforms,
@@ -187,7 +188,7 @@ function Sphere(props: ThreeElements["mesh"] & {
   // Return the view, these are regular Threejs elements expressed in JSX
   return (
     <mesh {...props}>
-      <icosahedronGeometry args={[2, 2]} />
+      <icosahedronGeometry args={[2, 6]} />
       {parameters && colorTemplate && normalTemplate && <meshStandardMaterial
         ref={materialRef}
         onBeforeCompile={modifyShader}
@@ -220,26 +221,8 @@ export function ModelPreview({
 
   const [normalScale, setNormalScale] = useState(1.0);
 
-  const handleNodePickedForColor = useCallback((id: string) => {
-    setColorNodeId(id);
-  }, []);
-  
-  const handleNodePickedForNormal = useCallback((id: string) => {
-    setNormalNodeId(id);
-  }, []);
-  
-  const {
-    requestPickNode,
-    pickingColorNode,
-  } = useStore(useShallow(state => ({
-    requestPickNode: state.requestPickNode,
-    pickingColorNode: state.pickNodeCallback === handleNodePickedForColor,
-    pickingNormalNode: state.pickNodeCallback === handleNodePickedForNormal,
-  })));
-
-
   return <div className={className}>
-    <div className="w-full h-full flex flex-col gap-1 pt-1">
+    <div className="w-full h-full flex flex-col gap-2 pt-1">
       <Button
         className="mx-2 w-fit"
         onClick={() => {
@@ -249,21 +232,29 @@ export function ModelPreview({
       >
         Reset view
       </Button>
-      <Button
-        className={`mx-2 w-fit rounded-md ${pickingColorNode ? "bg-neutral-700" : ""}`}
-        onClick={() => requestPickNode(pickingColorNode ? undefined : handleNodePickedForColor)}
-      >
-        Select color node
-      </Button>
-      <Button
-        className={`mx-2 w-fit rounded-md ${pickingColorNode ? "bg-neutral-700" : ""}`}
-        onClick={() => requestPickNode(pickingColorNode ? undefined : handleNodePickedForNormal)}
-      >
-        Select normal node
-      </Button>
+      <NodePicker
+        className="mx-2"
+        label="Color node"
+        value={colorNodeId}
+        onChange={setColorNodeId}
+      />
+      <NodePicker
+        className="mx-2"
+        label="Normal node"
+        value={normalNodeId}
+        onChange={setNormalNodeId}
+      />
       <label className="mx-2 w-fit">
         Normal scale
-        <Slider className="w-56" value={normalScale} min={0} max={1} step={0.1} onChange={setNormalScale} showValue />
+        <Slider
+          className="w-56"
+          value={normalScale}
+          min={0}
+          max={1}
+          step={0.1}
+          onChange={setNormalScale}
+          showValue
+        />
       </label>
       <Canvas className="w-full grow">
         <ambientLight intensity={Math.PI / 4} />

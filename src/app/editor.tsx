@@ -232,7 +232,7 @@ export default function Editor() {
         <UnmountOnConditionDelayed showCondition={modelPreviewOpen}>
           <div className={`
             h-full bg-neutral-800 border-r border-neutral-700
-            shadow-md shadow-black z-10 flex flex-col w-xl
+            shadow-md shadow-black z-10 flex flex-col w-96
             ${modelPreviewOpen ? "animate-fade-in-width" : "animate-fade-out-width"}
           `}>
             <div className={`flex flex-row m-2 mb-0`}>
