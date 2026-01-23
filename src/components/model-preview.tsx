@@ -219,7 +219,7 @@ export function ModelPreview({
   const [colorNodeId, setColorNodeId] = useState<string | undefined>(undefined);
   const [normalNodeId, setNormalNodeId] = useState<string | undefined>(undefined);
 
-  const [normalScale, setNormalScale] = useState(1.0);
+  const [normalScale, setNormalScale] = useState(0.4);
 
   return <div className={className}>
     <div className="w-full h-full flex flex-col gap-2 pt-1">
